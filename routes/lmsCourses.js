@@ -27,7 +27,7 @@ const storage = multer.diskStorage({
 });
 const document = multer({
     storage: storage,
-    limits: 15000000
+    limits: 20000000
 });
 
 // create new course
@@ -363,7 +363,7 @@ router.put('/add-topic-document', document.single('documentList'), async (req, r
 });
 
 
-// delete selected lecture of the topic
+// delete selected note of the topic
 router.put('/delete-topic-note/:topicId', async( req, res ) => {
     const topic = await topicModel.findById(req.params.topicId);
         

@@ -37,6 +37,7 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use("/", express.static(path.join(__dirname, 'angular')));
 app.use("/document", express.static(path.join(__dirname, './document')));
+app.use("/module-note", express.static(path.join(__dirname, './module-note')));
 
 app.use(cors());
 app.use('/index', indexRouter);

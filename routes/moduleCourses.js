@@ -1,10 +1,35 @@
 var express = require('express');
 var router = express.Router();
+const multer = require('multer');
 
 const userModel = require('../models/users.model');
 const moduleCourseModel = require('../models/moduleCourse.model');
 const moduleTopicModel = require('../models/moduleTopic.model');
+const moduleQuestionModel = require('../models/moduleQuestion.model');
 const remIdModel = require('../models/remId.model');
+
+
+// Document Storage
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        if (!file) {
+            return null;
+        } else {
+            return cb(null, "./module-note")
+        }
+    },
+    filename: (req, file, cb) => {
+        if (!file) {
+            return null;
+        } else {
+            return cb(null, `${file.fieldname}_${Date.now()}.pdf`);
+        }
+    }
+});
+const document = multer({
+    storage: storage,
+    limits: 20000000
+});
 
 
 // create new module course
@@ -166,11 +191,19 @@ router.get('/get-module-topic/:moduleId/:subjectId', async ( req, res ) => {
 
 
 // add new module solution to existing course
-router.put('/add-module-topic-question-solution', async (req, res) => {
+router.put('/add-module-topic-question-solution', document.single('moduleNote'), async (req, res) => {
 
+    // for extracting video id
     function extractVideoId(video){
         let videoId = video.split('/').pop();
         return videoId;
+    }
+
+    // for verfiying that image exists in the request
+    function file(){
+        if (req.file) {
+            return req.file.filename;
+        } 
     }
 
     const topic = await moduleTopicModel.findOneAndUpdate(
@@ -183,15 +216,32 @@ router.put('/add-module-topic-question-solution', async (req, res) => {
             $addToSet : {
                 questionList : {
                     questionId : req.body.questionId,
-                    videoId : extractVideoId(req.body.video)
+                    videoId : extractVideoId(req.body.video),
+                    note : `${req.protocol}://${req.get("host")}/module-note/${file()}`
                 }
             }
         }
     );
 
+    const moduleQuestion = new moduleQuestionModel({
+        moduleId : req.body.moduleId, 
+        subjectId : req.body.subjectId, 
+        topicId : req.body.topicId,
+        topicName : topic.topicName,
+        questionId : req.body.questionId,
+        videoId : extractVideoId(req.body.video),
+        note : `${req.protocol}://${req.get("host")}/module-note/${file()}`
+    });
+
+    moduleQuestion.save(function (err){
+        if(err){
+            res.status(400).send({message : "Unable to add data to separate question list"});
+        }
+    });
+
     topic.save(function (err) {
         if(err){
-            res.send({status: 500, message: 'Unable to create module topic'});
+            res.send({status: 400, message: 'Unable to create module topic'});
         }
         else{
             res.send({status: 200, message: 'Module Topic created successfully', topicDetails: topic});

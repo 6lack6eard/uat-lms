@@ -7,7 +7,8 @@ const moduleTopicSchema = mongoose.Schema({
     topicName : String,
     questionList : [{
         questionId : String,
-        videoId : String
+        videoId : String,
+        note : String
     }]
 });
 

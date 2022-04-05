@@ -15,6 +15,7 @@ const crashCourseModel = require('../models/crashCourse.model');
 const topicModel = require('../models/topic.model');
 const moduleCourseModel = require('../models/moduleCourse.model');
 const moduleTopicModel = require('../models/moduleTopic.model');
+const moduleQuestionModel = require('../models/moduleQuestion.model');
 const liveClassModel = require('../models/liveClass.model');
 
 /* ========== STUDENT PART =========== */
@@ -396,23 +397,42 @@ router.put('/get-module-topic-question-solution', verify, async( req, res )=>{
       const topic = await moduleTopicModel.findOne(
           {topicId : req.body.topicId}
       );
-      var genQuestionId, genVideoId;
+      var genQuestionId, genVideoId, genNoteLink;
   
       for (let i = 0; i < topic.questionList.length; i++) {
           if(topic.questionList[i].questionId === req.body.questionId){
               genQuestionId = topic.questionList[i].questionId;
               genVideoId = topic.questionList[i].videoId;
+              genNoteLink = topic.questionList[i].note;
               break;
           }        
       }
 
-      res.send({status: 200 , result: {questionId: genQuestionId, videoId: genVideoId}});
+      res.send({status: 200 , result: {questionId: genQuestionId, videoId: genVideoId, note: genNoteLink}});
       
   } catch (err) {
       res.send(err);
   }
   
 });
+
+
+// search question within a course subject
+router.put('/get-module-subject-questtion-solution', verify, async(req, res)=>{
+  try {
+
+    const moduleQuestionList = await moduleQuestionModel.find({
+      moduleId : req.body.moduleId,
+      subjectId : req.body.subjectId,
+      questionId : req.body.questionId
+    });
+
+    res.status(200).send({result : moduleQuestionList});
+    
+  } catch (err) {
+    res.status(400).send({message : 'Something went wrong'});
+  }
+})
 
 
 /* Get live class link */
