@@ -249,46 +249,52 @@ router.put('/forgotPassword', async (req, res) => {
   try {
     const user = await userModel.findOne({email : req.body.email});
 
-    if(!user){
-      res.send({message : "Mail you entered is not registered, Contact support for more details"});
+    if(user.role === "student"){
+      if(!user){
+        res.send({message : "Mail you entered is not registered, Contact support for more details"});
+      }
+      else{
+        user.pass = "gravity000";
+        user.save();
+  
+        // create reusable transporter object using the default SMTP transport
+        let transporter = nodemailer.createTransport({
+          // host: "smtp.ethereal.email",
+          // port: 587,
+          // secure: false, // true for 465, false for other ports
+          service: 'gmail',
+          auth: {
+            user: 'gravityitwork@gmail.com', // user
+            pass: 'gravityitwork@123', // password
+          }
+        });
+        
+        let content = `
+        <h2>Your Password Changed</h2>
+        <p>Your User Id and Password for Gravity LMS Account</p>
+        <h4>User Id : ${req.body.email}</h4>
+        <h4>Password : gravity000</h4>
+        <br>
+        <br>
+        <p>Login Link : <a href="https://gravityntse.com/">www.gravityntse.com</a></p>
+        <p>If this wasn't you, Call : <a href="tel:+918429981577">+91 84299 81577</a>
+        `;
+        
+        // send mail with defined transport object
+        await transporter.sendMail({
+          from: '"Gravity LMS" <gravityitwork@gmail.com>', // sender address
+          to: req.body.email, // list of receivers
+          subject: "Gravity LMS Password Reset", // Subject line
+          html: content, // html body
+        });
+        
+        res.send({message : "Mail sent to registered email"});
+      }      
     }
-    else{
-      user.pass = "gravity000";
-      user.save();
+    else {
+      res.status(400).send({message : "Invalid request"});
+    }
 
-      // create reusable transporter object using the default SMTP transport
-      let transporter = nodemailer.createTransport({
-        // host: "smtp.ethereal.email",
-        // port: 587,
-        // secure: false, // true for 465, false for other ports
-        service: 'gmail',
-        auth: {
-          user: 'gravityitwork@gmail.com', // user
-          pass: 'gravityitwork@123', // password
-        }
-      });
-      
-      let content = `
-      <h2>Your Password Changed</h2>
-      <p>Your User Id and Password for Gravity LMS Account</p>
-      <h4>User Id : ${req.body.email}</h4>
-      <h4>Password : gravity000</h4>
-      <br>
-      <br>
-      <p>Login Link : <a href="https://gravityntse.com/">www.gravityntse.com</a></p>
-      <p>If this wasn't you, Call : <a href="tel:+918429981577">+91 84299 81577</a>
-      `;
-      
-      // send mail with defined transport object
-      await transporter.sendMail({
-        from: '"Gravity LMS" <gravityitwork@gmail.com>', // sender address
-        to: req.body.email, // list of receivers
-        subject: "Gravity LMS Password Reset", // Subject line
-        html: content, // html body
-      });
-      
-      res.send({message : "Mail sent to registered email"});
-    }      
   } 
   catch (error) {
     res.send(err);
