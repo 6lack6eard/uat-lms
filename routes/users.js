@@ -251,7 +251,7 @@ router.put('/forgotPassword', async (req, res) => {
 
     if(user.role === "student"){
       if(!user){
-        res.send({message : "Mail you entered is not registered, Contact support for more details"});
+        res.status(400).send({message : "Mail you entered is not registered, Contact support for more details"});
       }
       else{
         user.pass = "gravity000";
@@ -288,16 +288,17 @@ router.put('/forgotPassword', async (req, res) => {
           html: content, // html body
         });
         
-        res.send({message : "Mail sent to registered email"});
+        res.status(200).send({message : "Mail sent to registered email"});
       }      
     }
-    else {
-      res.status(400).send({message : "Invalid request"});
+    else 
+    if(user.role != "student"){
+      res.status(400).send({message : "Feature only available for students"});
     }
 
   } 
   catch (error) {
-    res.send(err);
+    res.status(400).send({message : "Something went wrong"});
   }
   
 });
