@@ -812,7 +812,7 @@ router.post('/addNewStudent', async function(req, res, next) {
   let content = `
   <h2>Registration Successful</h2>
   <p>Your User Id and Password for Gravity LMS Account</p>
-  <h4>User Id : ${req.body.email}</h4>
+  <h4>User Id : ${user.email}</h4>
   <h4>Password : ${user.pass}</h4>
   <br>
   <br>
@@ -823,7 +823,7 @@ router.post('/addNewStudent', async function(req, res, next) {
   // send mail with defined transport object
   await transporter.sendMail({
     from: '"Gravity LMS" <gravityitwork@gmail.com>', // sender address
-    to: req.body.email, // list of receivers
+    to: user.email, // list of receivers
     subject: "Gravity LMS Registration", // Subject line
     html: content, // html body
   });
