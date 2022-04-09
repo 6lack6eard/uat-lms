@@ -86,6 +86,19 @@ router.post('/demo-register', async (req, res) => {
     return course;
   }
 
+  // genrate pass
+  function genPass() {
+    var pass = "";
+    var str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' + 'abcdefghijklmnopqrstuvwxyz0123456789';
+  
+    for (i = 1; i <= 8; i++) {
+      var char = Math.floor(Math.random() * str.length + 1);
+      pass = pass + str.charAt(char);
+    }
+
+    return pass;
+  }
+
   // incrementing student id
   const remId = await remIdModel.findOne({remTittle : 'RemTable'});
   const id = (remId.remStudentId + 1);
@@ -110,15 +123,47 @@ router.post('/demo-register', async (req, res) => {
     session: "2021-22",
     school: "School",
     address: "Address",
-    pass: "gravity000",
+    pass: genPass(),
     status: "2",
     role: "student"
   });
 
+  // send sms to the no.
   fast2sms.sendMessage({
     authorization : process.env.FAST_2_SMS,
     message : `Gravity LMS Login Details:-\nUserId : ${user.email}\nPassword : ${user.pass}\n`,
     numbers : [user.mobile]
+  });
+
+  // create reusable transporter object using the default SMTP transport
+  let transporter = nodemailer.createTransport({
+    // host: "smtp.ethereal.email",
+    // port: 587,
+    // secure: false, // true for 465, false for other ports
+    service: 'gmail',
+    auth: {
+      user: 'gravityitwork@gmail.com', // user
+      pass: 'gravityitwork@123', // password
+    }
+  });
+  
+  let content = `
+  <h2>Registration Successful</h2>
+  <p>Your User Id and Password for Gravity LMS Account</p>
+  <h4>User Id : ${user.email}</h4>
+  <h4>Password : ${user.pass}</h4>
+  <br>
+  <br>
+  <p>Login Link : <a href="https://gravitydigital.com/">www.gravitydigital.com</a></p>
+  <p>For any queries, Call : <a href="tel:+918429981577">+91 84299 81577</a>
+  `;
+  
+  // send mail with defined transport object
+  await transporter.sendMail({
+    from: '"Gravity LMS" <gravityitwork@gmail.com>', // sender address
+    to: user.email, // list of receivers
+    subject: "Gravity LMS Registration", // Subject line
+    html: content, // html body
   });
 
   user.save(function(err, userObj){
@@ -249,12 +294,24 @@ router.put('/forgotPassword', async (req, res) => {
   try {
     const user = await userModel.findOne({email : req.body.email});
 
+    function genPass() {
+      var pass = "";
+      var str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' + 'abcdefghijklmnopqrstuvwxyz0123456789';
+    
+      for (i = 1; i <= 8; i++) {
+        var char = Math.floor(Math.random() * str.length + 1);
+        pass = pass + str.charAt(char);
+      }
+
+      return pass;
+    }
+
     if(user.role === "student"){
       if(!user){
         res.status(400).send({message : "Mail you entered is not registered, Contact support for more details"});
       }
       else{
-        user.pass = "gravity000";
+        user.pass = genPass();
         user.save();
   
         // create reusable transporter object using the default SMTP transport
@@ -273,10 +330,10 @@ router.put('/forgotPassword', async (req, res) => {
         <h2>Your Password Changed</h2>
         <p>Your User Id and Password for Gravity LMS Account</p>
         <h4>User Id : ${req.body.email}</h4>
-        <h4>Password : gravity000</h4>
+        <h4>Password : ${user.pass}</h4>
         <br>
         <br>
-        <p>Login Link : <a href="https://gravityntse.com/">www.gravityntse.com</a></p>
+        <p>Login Link : <a href="https://gravitydigital.com/">www.gravitydigital.com</a></p>
         <p>If this wasn't you, Call : <a href="tel:+918429981577">+91 84299 81577</a>
         `;
         
@@ -687,6 +744,19 @@ router.post('/addNewStudent', async function(req, res, next) {
     return g_stream;
   }
 
+  // gen password
+  function genPass() {
+    var pass = "";
+    var str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' + 'abcdefghijklmnopqrstuvwxyz0123456789';
+  
+    for (i = 1; i <= 8; i++) {
+      var char = Math.floor(Math.random() * str.length + 1);
+      pass = pass + str.charAt(char);
+    }
+
+    return pass;
+  }
+
   let g_center = centerGen(c_center);
   let g_session = sessionGen(c_session);
   let g_stream = streamGen(c_stream);
@@ -722,9 +792,40 @@ router.post('/addNewStudent', async function(req, res, next) {
     session: req.body.session,
     school: req.body.sch,
     address: req.body.add,
-    pass: "gravity000",
+    pass: genPass(),
     status: "1",
     role: "student"
+  });
+
+  // create reusable transporter object using the default SMTP transport
+  let transporter = nodemailer.createTransport({
+    // host: "smtp.ethereal.email",
+    // port: 587,
+    // secure: false, // true for 465, false for other ports
+    service: 'gmail',
+    auth: {
+      user: 'gravityitwork@gmail.com', // user
+      pass: 'gravityitwork@123', // password
+    }
+  });
+  
+  let content = `
+  <h2>Registration Successful</h2>
+  <p>Your User Id and Password for Gravity LMS Account</p>
+  <h4>User Id : ${req.body.email}</h4>
+  <h4>Password : ${user.pass}</h4>
+  <br>
+  <br>
+  <p>Login Link : <a href="https://gravitydigital.com/">www.gravitydigital.com</a></p>
+  <p>For any queries, Call : <a href="tel:+918429981577">+91 84299 81577</a>
+  `;
+  
+  // send mail with defined transport object
+  await transporter.sendMail({
+    from: '"Gravity LMS" <gravityitwork@gmail.com>', // sender address
+    to: req.body.email, // list of receivers
+    subject: "Gravity LMS Registration", // Subject line
+    html: content, // html body
   });
 
   user.save(function(err, userObj){
@@ -827,14 +928,63 @@ router.put('/activateStudent', async (req, res)=>{
 /* PASSWORD RESET */
 router.put('/restPassword', async (req, res)=>{
   try {
-    const user = await userModel.findOneAndUpdate(
-      {$or: [{userId: req.body.userId}, {email: req.body.userId}]},
-      {pass: "gravity000"}
-    )
-    res.save(user);
+    const user = await userModel.findOne(
+      {$or: [{userId: req.body.userId}, {email: req.body.userId}]}
+    );
+
+    // gen password
+    function genPass() {
+      var pass = "";
+      var str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' + 'abcdefghijklmnopqrstuvwxyz0123456789';
+    
+      for (i = 1; i <= 8; i++) {
+        var char = Math.floor(Math.random() * str.length + 1);
+        pass = pass + str.charAt(char);
+      }
+
+      return pass;
+    }
+
+    // change pass here   
+    user.pass = genPass();
+    user.save();
+
+    // create reusable transporter object using the default SMTP transport
+    let transporter = nodemailer.createTransport({
+      // host: "smtp.ethereal.email",
+      // port: 587,
+      // secure: false, // true for 465, false for other ports
+      service: 'gmail',
+      auth: {
+        user: 'gravityitwork@gmail.com', // user
+        pass: 'gravityitwork@123', // password
+      }
+    });
+    
+    let content = `
+    <h2>Gravity LMS Password Reset Successful</h2>
+    <p>Your User Id and Password for Gravity LMS Account</p>
+    <h4>User Id : ${user.email}</h4>
+    <h4>Password : ${user.pass}</h4>
+    <br>
+    <br>
+    <p>Login Link : <a href="https://gravitydigital.com/">www.gravitydigital.com</a></p>
+    <p>For any queries, Call : <a href="tel:+918429981577">+91 84299 81577</a>
+    `;
+    
+    // send mail with defined transport object
+    await transporter.sendMail({
+      from: '"Gravity LMS" <gravityitwork@gmail.com>', // sender address
+      to: user.email, // list of receivers
+      subject: "Gravity LMS Password Reset", // Subject line
+      html: content, // html body
+    });
+
+    res.status(200).send({message : "Password reset successful"});
+
 
   } catch (err) {
-    res.send({message: "Something went wrong"})
+    res.status(400).send({message: "Something went wrong"})
   }
 });
 
