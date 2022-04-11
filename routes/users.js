@@ -123,7 +123,7 @@ router.post('/demo-register', async (req, res) => {
     session: "2021-22",
     school: "School",
     address: "Address",
-    pass: genPass(),
+    pass: "gravity000",
     status: "2",
     role: "student"
   });
@@ -135,7 +135,7 @@ router.post('/demo-register', async (req, res) => {
     numbers : [user.mobile]
   });
 
-  // create reusable transporter object using the default SMTP transport
+  /* // create reusable transporter object using the default SMTP transport
   let transporter = nodemailer.createTransport({
     // host: "smtp.ethereal.email",
     // port: 587,
@@ -164,7 +164,7 @@ router.post('/demo-register', async (req, res) => {
     to: user.email, // list of receivers
     subject: "Gravity LMS Registration", // Subject line
     html: content, // html body
-  });
+  }); */
 
   user.save(function(err, userObj){
     if(err){
@@ -311,10 +311,10 @@ router.put('/forgotPassword', async (req, res) => {
         res.status(400).send({message : "Mail you entered is not registered, Contact support for more details"});
       }
       else{
-        user.pass = genPass();
+        user.pass = "gravity000";
         user.save();
   
-        // create reusable transporter object using the default SMTP transport
+        /* // create reusable transporter object using the default SMTP transport
         let transporter = nodemailer.createTransport({
           // host: "smtp.ethereal.email",
           // port: 587,
@@ -343,7 +343,7 @@ router.put('/forgotPassword', async (req, res) => {
           to: req.body.email, // list of receivers
           subject: "Gravity LMS Password Reset", // Subject line
           html: content, // html body
-        });
+        }); */
         
         res.status(200).send({message : "Mail sent to registered email"});
       }      
@@ -662,181 +662,188 @@ router.post('/admin-login', async (req, res) => {
 /* ADD NEW STUDENT */
 router.post('/addNewStudent', async function(req, res, next) {
 
-  // check if mobile already exists
-  const mobileExist = await userModel.findOne({
-    mobile : req.body.mobile
-  });
-  if(mobileExist) return res.status(400).send("Mobile no. is already registered");
-
-  // check if email is already registered
-  const emailExist = await userModel.findOne({
-    email: req.body.email
-  });
-  if(emailExist) return res.status(400).send("Email is already already registered");
-
-  let c_name = req.body.name;
-  let c_mobile = req.body.mobile;
-  let c_email = req.body.email;
-  let c_class = req.body.class;
-  let c_center = req.body.center;
-  let c_stream = req.body.stream;
-  let c_session = req.body.session;
-  let c_school = req.body.school;
-  let c_address = req.body.address;
-  
-  // gen center
-  function centerGen(c_center){
-    let g_center;
+  try {
     
-    if(c_center === "Hazratganj"){
-      g_center = "HZ";
-    }
-    else if(c_center === "Aliganj"){
-      g_center = "AL";
-    }
-    else if(c_center === "Gomti Nagar"){
-      g_center = "GM";
-    }
-    else if(c_center === "Indira Nagar"){
-      g_center = "IN";
-    }
-
-    return g_center;
-  }
-
-  // gen session
-  function sessionGen(c_session){
-    let g_session;
+    // check if mobile already exists
+    const mobileExist = await userModel.findOne({
+      mobile : req.body.mobile
+    });
+    if(mobileExist) return res.status(400).send("Mobile no. is already registered");
     
-    if(c_session === "2020-21"){
-      g_session = "20";
-    }
-    else if(c_session === "2021-22"){
-      g_session = "21";
-    }
-    else if(c_session === "2022-23"){
-      g_session = "22";
-    }
-    else if(c_session === "2023-24"){
-      g_session = "23";
-    }
-    else if(c_session === "2024-25"){
-      g_session = "24";
-    }
-    else if(c_session === "2025-26"){
-      g_session = "25";
-    }
-
-    return g_session;
-  }
-
-  // gen stream
-  function streamGen(c_stream){
-    let g_stream;
+    // check if email is already registered
+    const emailExist = await userModel.findOne({
+      email: req.body.email
+    });
+    if(emailExist) return res.status(400).send("Email is already already registered");
     
-    if(c_stream === "JEE"){
-      g_stream = "JE";
+    let c_name = req.body.name;
+    let c_mobile = req.body.mobile;
+    let c_email = req.body.email;
+    let c_class = req.body.class;
+    let c_center = req.body.center;
+    let c_stream = req.body.stream;
+    let c_session = req.body.session;
+    let c_school = req.body.school;
+    let c_address = req.body.address;
+    
+    // gen center
+    function centerGen(c_center){
+      let g_center;
+      
+      if(c_center === "Hazratganj"){
+        g_center = "HZ";
+      }
+      else if(c_center === "Aliganj"){
+        g_center = "AL";
+      }
+      else if(c_center === "Gomti Nagar"){
+        g_center = "GM";
+      }
+      else if(c_center === "Indira Nagar"){
+        g_center = "IN";
+      }
+      
+      return g_center;
     }
-    else if(c_stream === "NEET"){
-      g_stream = "NT";
+    
+    // gen session
+    function sessionGen(c_session){
+      let g_session;
+      
+      if(c_session === "2020-21"){
+        g_session = "20";
+      }
+      else if(c_session === "2021-22"){
+        g_session = "21";
+      }
+      else if(c_session === "2022-23"){
+        g_session = "22";
+      }
+      else if(c_session === "2023-24"){
+        g_session = "23";
+      }
+      else if(c_session === "2024-25"){
+        g_session = "24";
+      }
+      else if(c_session === "2025-26"){
+        g_session = "25";
+      }
+
+      return g_session;
     }
 
-    return g_stream;
+    // gen stream
+    function streamGen(c_stream){
+      let g_stream;
+      
+      if(c_stream === "JEE"){
+        g_stream = "JE";
+      }
+      else if(c_stream === "NEET"){
+        g_stream = "NT";
+      }
+      
+      return g_stream;
+    }
+
+    // gen password
+    function genPass() {
+      var pass = "";
+      var str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' + 'abcdefghijklmnopqrstuvwxyz0123456789';
+    
+      for (i = 1; i <= 8; i++) {
+        var char = Math.floor(Math.random() * str.length + 1);
+        pass = pass + str.charAt(char);
+      }
+
+      return pass;
+    }
+
+    let g_center = centerGen(c_center);
+    let g_session = sessionGen(c_session);
+    let g_stream = streamGen(c_stream);
+
+    // gen userid
+    function genrate_id(g_center, c_class, g_session, g_stream, srno){
+      let genId = `GR${g_center}${c_class}${g_session}${g_stream}${srno}`;
+
+      return genId;
+    } 
+
+    // incrementing student id
+    const remId = await remIdModel.findOne({remTittle : 'RemTable'});
+    const id = (remId.remStudentId + 1);
+    const remIdUpdate = await remIdModel.findOneAndUpdate(
+        {remTittle : 'RemTable'},
+        {remStudentId : id}
+    );
+    remIdUpdate.save();
+
+    let srno = (remIdUpdate.remStudentId).toString().padStart(6, '0');
+
+    
+    // create new user
+    const user = new userModel({
+      userId: genrate_id(g_center, c_class, g_session, g_stream, srno),
+      name: req.body.name,
+      mobile: req.body.mobile,
+      email: req.body.email,
+      class: req.body.class,
+      center: req.body.center,
+      stream: req.body.stream,
+      session: req.body.session,
+      school: req.body.sch,
+      address: req.body.add,
+      pass: "gravity000",
+      status: "1",
+      role: "student"
+    });
+
+    /* // create reusable transporter object using the default SMTP transport
+    let transporter = nodemailer.createTransport({
+      // host: "smtp.ethereal.email",
+      // port: 587,
+      // secure: false, // true for 465, false for other ports
+      service: 'gmail',
+      auth: {
+        user: 'gravityitwork@gmail.com', // user
+        pass: 'gravityitwork@123', // password
+      }
+    });
+    
+    let content = `
+    <h2>Registration Successful</h2>
+    <p>Your User Id and Password for Gravity LMS Account</p>
+    <h4>User Id : ${user.email}</h4>
+    <h4>Password : ${user.pass}</h4>
+    <br>
+    <br>
+    <p>Login Link : <a href="https://gravitydigital.com/">www.gravitydigital.com</a></p>
+    <p>For any queries, Call : <a href="tel:+918429981577">+91 84299 81577</a>
+    `;
+    
+    // send mail with defined transport object
+    await transporter.sendMail({
+      from: '"Gravity LMS" <gravityitwork@gmail.com>', // sender address
+      to: user.email, // list of receivers
+      subject: "Gravity LMS Registration", // Subject line
+      html: content, // html body
+    }); */
+
+    user.save(function(err, userObj){
+      if(err){
+        res.send({status: 500, message: 'Unable to ADD user'});
+      }
+      else{
+        res.send({status: 200, message: 'User added successfully', userDetails: user});
+      }
+      
+    });
+  
+
+  } catch (error) {
+    res.status(400).send({message : "Something went wrong"});
   }
-
-  // gen password
-  function genPass() {
-    var pass = "";
-    var str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' + 'abcdefghijklmnopqrstuvwxyz0123456789';
-  
-    for (i = 1; i <= 8; i++) {
-      var char = Math.floor(Math.random() * str.length + 1);
-      pass = pass + str.charAt(char);
-    }
-
-    return pass;
-  }
-
-  let g_center = centerGen(c_center);
-  let g_session = sessionGen(c_session);
-  let g_stream = streamGen(c_stream);
-
-  // gen userid
-  function genrate_id(g_center, c_class, g_session, g_stream, srno){
-    let genId = `GR${g_center}${c_class}${g_session}${g_stream}${srno}`;
-
-    return genId;
-  } 
-
-  // incrementing student id
-  const remId = await remIdModel.findOne({remTittle : 'RemTable'});
-  const id = (remId.remStudentId + 1);
-  const remIdUpdate = await remIdModel.findOneAndUpdate(
-      {remTittle : 'RemTable'},
-      {remStudentId : id}
-  );
-  remIdUpdate.save();
-
-  let srno = (remIdUpdate.remStudentId).toString().padStart(6, '0');
-
-  
-  // create new user
-  const user = new userModel({
-    userId: genrate_id(g_center, c_class, g_session, g_stream, srno),
-    name: req.body.name,
-    mobile: req.body.mobile,
-    email: req.body.email,
-    class: req.body.class,
-    center: req.body.center,
-    stream: req.body.stream,
-    session: req.body.session,
-    school: req.body.sch,
-    address: req.body.add,
-    pass: genPass(),
-    status: "1",
-    role: "student"
-  });
-
-  // create reusable transporter object using the default SMTP transport
-  let transporter = nodemailer.createTransport({
-    // host: "smtp.ethereal.email",
-    // port: 587,
-    // secure: false, // true for 465, false for other ports
-    service: 'gmail',
-    auth: {
-      user: 'gravityitwork@gmail.com', // user
-      pass: 'gravityitwork@123', // password
-    }
-  });
-  
-  let content = `
-  <h2>Registration Successful</h2>
-  <p>Your User Id and Password for Gravity LMS Account</p>
-  <h4>User Id : ${user.email}</h4>
-  <h4>Password : ${user.pass}</h4>
-  <br>
-  <br>
-  <p>Login Link : <a href="https://gravitydigital.com/">www.gravitydigital.com</a></p>
-  <p>For any queries, Call : <a href="tel:+918429981577">+91 84299 81577</a>
-  `;
-  
-  // send mail with defined transport object
-  await transporter.sendMail({
-    from: '"Gravity LMS" <gravityitwork@gmail.com>', // sender address
-    to: user.email, // list of receivers
-    subject: "Gravity LMS Registration", // Subject line
-    html: content, // html body
-  });
-
-  user.save(function(err, userObj){
-    if(err){
-      res.send({status: 500, message: 'Unable to ADD user'});
-    }
-    else{
-      res.send({status: 200, message: 'User added successfully', userDetails: user});
-    }
-
-  });
 });
 
 
@@ -946,10 +953,10 @@ router.put('/restPassword', async (req, res)=>{
     }
 
     // change pass here   
-    user.pass = genPass();
+    user.pass = "gravity000";
     user.save();
 
-    // create reusable transporter object using the default SMTP transport
+    /* // create reusable transporter object using the default SMTP transport
     let transporter = nodemailer.createTransport({
       // host: "smtp.ethereal.email",
       // port: 587,
@@ -978,7 +985,7 @@ router.put('/restPassword', async (req, res)=>{
       to: user.email, // list of receivers
       subject: "Gravity LMS Password Reset", // Subject line
       html: content, // html body
-    });
+    }); */
 
     res.status(200).send({message : "Password reset successful"});
 
