@@ -123,7 +123,7 @@ router.post('/demo-register', async (req, res) => {
     session: "2021-22",
     school: "School",
     address: "Address",
-    pass: "gravity000",
+    pass: genPass(),
     status: "2",
     role: "student"
   });
@@ -311,7 +311,7 @@ router.put('/forgotPassword', async (req, res) => {
         res.status(400).send({message : "Mail you entered is not registered, Contact support for more details"});
       }
       else{
-        user.pass = "gravity000";
+        user.pass = genPass();
         user.save();
   
         /* // create reusable transporter object using the default SMTP transport
@@ -344,8 +344,15 @@ router.put('/forgotPassword', async (req, res) => {
           subject: "Gravity LMS Password Reset", // Subject line
           html: content, // html body
         }); */
+
+        // send sms to the no.
+        fast2sms.sendMessage({
+          authorization : process.env.FAST_2_SMS,
+          message : `Gravity LMS Login Details:-\nUserId : ${user.email}\nPassword : ${user.pass}\n`,
+          numbers : [user.mobile]
+        });
         
-        res.status(200).send({message : "Mail sent to registered email"});
+        res.status(200).send({message : `Updated login details are sent to your registered mobile no. ${((user.mobile).slice(-4)).padStart(10, "*")}`});
       }      
     }
     else 
@@ -799,6 +806,13 @@ router.post('/addNewStudent', async function(req, res, next) {
       role: "student"
     });
 
+    // send sms to the no.
+    fast2sms.sendMessage({
+      authorization : process.env.FAST_2_SMS,
+      message : `Gravity LMS Login Details:-\nUserId : ${user.email}\nPassword : ${user.pass}\n`,
+      numbers : [user.mobile]
+    });
+
     /* // create reusable transporter object using the default SMTP transport
     let transporter = nodemailer.createTransport({
       // host: "smtp.ethereal.email",
@@ -835,7 +849,7 @@ router.post('/addNewStudent', async function(req, res, next) {
         res.send({status: 500, message: 'Unable to ADD user'});
       }
       else{
-        res.send({status: 200, message: 'User added successfully', userDetails: user});
+        res.send({status: 200, message: 'User added successfully. Login Details are sent to given no.', userDetails: user});
       }
       
     });
@@ -987,6 +1001,13 @@ router.put('/restPassword', async (req, res)=>{
       html: content, // html body
     }); */
 
+    // send sms to the no.
+    fast2sms.sendMessage({
+      authorization : process.env.FAST_2_SMS,
+      message : `Gravity LMS Login Details:-\nUserId : ${user.email}\nPassword : ${user.pass}\n`,
+      numbers : [user.mobile]
+    });
+
     res.status(200).send({message : "Password reset successful"});
 
 
@@ -1115,7 +1136,69 @@ router.post('/subadmin-login', async (req, res) => {
 
   // token generation
   const token = jwt.sign({_id: admin._id, role: admin.role}, process.env.TOKEN_SECRET);
-  res.header("auth-token", token).send({ token: token, result : admin});
+  res.header("auth-token", token).send({ token: token, result : admin, center : admin.center});
+});
+
+
+/* STUDENT LIST WITH FILTER */
+router.put('/filterStudent/:center', async (req, res)=>{
+  try {
+    var updatedUserList = [];
+    const usersList = await userModel.find({
+      $or : [
+        { class : req.body.class }, 
+        { session : req.body.session }, 
+        { status : req.body.status }, 
+        { mobile : req.body.id }, 
+        { email : req.body.id }, 
+        { userId : req.body.id }
+      ]
+    });
+
+    /* const usersList = await userModel.find({
+      $and : [ 
+        req.params.center, 
+        { $or : [
+          { class : req.body.class }, 
+          { session : req.body.session }, 
+          { status : req.body.status }, 
+          { mobile : req.body.id }, 
+          { email : req.body.id }, 
+          { userId : req.body.id }
+        ]}
+      ]
+    }); */
+
+    for (let i = 0; i < usersList.length; i++) {
+      if (usersList[i].center == req.params.center) {
+        updatedUserList.push(usersList[i]);
+      }
+    }
+
+    res.status(200).send({result : updatedUserList});
+
+  } catch (err) {
+    res.send(err);
+  }
+});
+
+
+/* STUDENT LIST WITH COURSE FILTER */
+router.put('/filterStudentByCourse/:center', async (req, res) => {
+  try {
+    const filteredUserList = [];
+    await userModel.find(function(err, userList) {
+      for (let i = 0; i < userList.length; i++) {
+        if((userList[i].lmsCourse.includes(req.body.courseId) && (userList[i].center == req.params.center))){
+          filteredUserList.push(userList[i]);
+        }
+      }
+    });
+    res.status(200).send({result : filteredUserList});
+
+  } catch (err) {
+    res.status(500).send(err);
+  }
 });
 
 /* ========== SUB ADMIN PART END =========== */
