@@ -41,7 +41,7 @@ router.post('/create-course', async ( req, res ) => {
             courseSubject = ["Physics", "Chemistry", "Biology"];
         }
         else if(courseType==="COMMON"){
-            courseSubject = ["Physics", "Chemistry", "Math", "Biology", "Mat", "Sst"];
+            courseSubject = ["Physics", "Chemistry", "Math", "Biology", "Mat", "Sst", "Computer"];
         }
         return courseSubject;
     };
