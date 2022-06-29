@@ -7,6 +7,7 @@ const nodemailer = require('nodemailer');
 const fast2sms = require('fast-two-sms');
 const jsSHA = require('jssha');
 const request = require('request');
+const multer = require('multer');
 
 const userModel = require('../models/users.model');
 const remIdModel = require('../models/remId.model');
@@ -17,6 +18,34 @@ const moduleCourseModel = require('../models/moduleCourse.model');
 const moduleTopicModel = require('../models/moduleTopic.model');
 const moduleQuestionModel = require('../models/moduleQuestion.model');
 const liveClassModel = require('../models/liveClass.model');
+const schoolDocumentModel = require('../models/schoolDocument.model');
+const dateTypeModel = require('../models/dateType.model');
+
+
+// Document Storage
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    if (!file) {
+      return null;
+    } else {
+      return cb(null, "./document")
+    }
+  },
+  filename: (req, file, cb) => {
+    if (!file) {
+      return null;
+    } else {
+      return cb(null, `${file.originalname}_${file.fieldname}_${Date.now()}.pdf`);
+    }
+  }
+});
+
+const document = multer({
+  storage: storage,
+  limits: 20000000
+});
+
+
 
 /* ========== STUDENT PART =========== */
 
@@ -562,6 +591,105 @@ router.post('/buy-course', verify, async (req, res) => {
 });
 
 
+/* Assign new course using promocode */
+router.post('/register-code', async (req, res) => {
+
+  function streamGen(stream){
+    let g_stream;
+    
+    if(stream === "JEE"){
+      g_stream = "JE";
+    }
+    else if(stream === "NEET"){
+      g_stream = "NT";
+    }
+    else if(stream === "COMMON"){
+      g_stream = "CO";
+    }
+
+    return g_stream;
+  }
+
+  function genPass() {
+    var pass = "";
+    var str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' + 'abcdefghijklmnopqrstuvwxyz0123456789';
+  
+    for (i = 1; i <= 8; i++) {
+      var char = Math.floor(Math.random() * str.length + 1);
+      pass = pass + str.charAt(char);
+    }
+
+    return pass;
+  }  
+
+  function sendMessage(user){
+    fast2sms.sendMessage({
+      authorization : process.env.FAST_2_SMS,
+      message : `Gravity LMS Login Details:-\nUserId : ${user.email}\nPassword : ${user.pass}\n`,
+      numbers : [user.mobile]
+    });
+  }
+  
+  function saveUser(user){
+    user.save(function(err, userObj){
+      if(err){
+        res.send({status: 500, message: 'Unable to ADD user'});
+      }
+      else{
+        res.send({status: 200, message: 'You registered successfully', result: userObj});
+      }
+    
+    });
+  }  
+  
+  // check if user already exists
+  const userExist = await userModel.findOne({
+    $or : [
+      {mobile : req.body.mobile},
+      {email: req.body.email}
+    ]
+  });
+  if(userExist) {
+    assignLmsCourse();
+    saveUser();
+  }
+  else {
+
+    // incrementing student id
+    const remId = await remIdModel.findOne({remTittle : 'RemTable'});
+    const id = (remId.remStudentId + 1);
+    const remIdUpdate = await remIdModel.findOneAndUpdate(
+        {remTittle : 'RemTable'},
+        {remStudentId : id}
+    );
+    remIdUpdate.save();
+
+    let srno = (remIdUpdate.remStudentId).toString().padStart(6, '0');    
+
+    const user = new userModel({
+      userId: `GRHZ${req.body.class}21${streamGen(req.body.stream)}${srno}`,
+      name: req.body.name,
+      mobile: req.body.mobile,
+      email: req.body.email,
+      class: req.body.class,
+      center: req.body.center,
+      stream: req.body.stream,
+      lmsCourse: assignLmsCourse(),
+      session: req.body.session,
+      school: "School",
+      address: "Address",
+      pass: genPass(),
+      status: "1",
+      role: "student"
+    });
+
+    saveUser();
+
+  }
+
+});
+
+
 
 
 
@@ -870,6 +998,7 @@ router.put('/filterStudent', async (req, res)=>{
         { class : req.body.class }, 
         { session : req.body.session }, 
         { status : req.body.status }, 
+        { schoolRefId : req.body.schoolRefId },
         { mobile : req.body.id }, 
         { email : req.body.id }, 
         { userId : req.body.id }
@@ -1202,6 +1331,333 @@ router.put('/filterStudentByCourse/:center', async (req, res) => {
 });
 
 /* ========== SUB ADMIN PART END =========== */
+
+
+
+/* ========== SCHOOL ADMIN PART START =========== */
+
+/* SCHOOL-ADMIN-LOGIN */
+router.post('/schooladmin-login', async (req, res) => {
+
+  // checking mail exist in db
+  const admin = await userModel.findOne({
+    $or : [
+      { email: req.body.email },
+      { userId: req.body.email },
+      { mobile: req.body.email }
+    ]
+  });
+  console.log(req.body.email);
+  if(!admin) return res.status(400).send("Email is wrong");
+
+  // checking password
+  const validPass = (req.body.pass === admin.pass);
+  if(!validPass) return res.status(400).send("Invalid Password");
+
+  // checking role
+  const validRole = (admin.role === "schooladmin");
+  if(!validRole) return res.status(400).send("User not authorized");
+
+  // token generation
+  const token = jwt.sign({_id: admin._id, role: admin.role}, process.env.TOKEN_SECRET);
+  res.header("auth-token", token).send({ token: token, result : admin, center : admin.center});
+
+});
+
+
+/* SCHOOL REGISTRATION */
+router.post('/register-school', async (req, res) => {
+
+  try {
+
+    // check if school already exist
+    const schoolExist = await userModel.findOne({
+      $or : [
+        {email : req.body.email},
+        {mobile : req.body.mobile}
+      ]
+    });
+    if(schoolExist) return res.status(400).send({message : "School already exists with this Email/Mobile"});
+
+    // gen password
+    function genPass() {
+      var pass = "";
+      var str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' + 'abcdefghijklmnopqrstuvwxyz0123456789';
+    
+      for (i = 1; i <= 8; i++) {
+        var char = Math.floor(Math.random() * str.length + 1);
+        pass = pass + str.charAt(char);
+      }
+
+      return pass;
+    }
+    
+    // incrementing student id
+    const remId = await remIdModel.findOne({remTittle : 'RemTable'});
+    const id = (remId.remSchoolId + 1);
+    const remIdUpdate = await remIdModel.findOneAndUpdate(
+      {remTittle : 'RemTable'},
+      {remSchoolId : id}
+    );
+    remIdUpdate.save();
+    let srno = (remIdUpdate.remSchoolId).toString().padStart(3, '0');
+      
+    const school = new userModel({
+      userId : `GRPR${srno}`,       // Gravity Partner
+      email : req.body.email,
+      mobile : req.body.mobile,
+      name : req.body.name,
+      pass : genPass(),
+      role : "schooladmin"
+    });
+
+    school.save(function (err){
+      if(err){
+        res.status(400).send({message : "School not registered"});
+      }
+      else{
+        res.status(200).send({message : "School registered successfully", result : school});
+      }
+    });  
+
+    // send sms to the no.
+    fast2sms.sendMessage({
+      authorization : process.env.FAST_2_SMS,
+      message : `Gravity LMS Login Details:-\nUserId : ${school.email}\nPassword : ${school.pass}\n`,
+      numbers : [school.mobile]
+    });
+    
+  } catch (err) {
+    res.status(400).send({message : "Something went wrong"});
+  }
+
+});
+
+
+/* GET SCHOOL LIST */
+router.get('/get-school-list', async (req, res) => {
+  try {
+
+    const schoolList = await userModel.find({
+      role : "schooladmin"
+    });
+
+    res.status(200).send({result : schoolList});
+    
+  } catch (err) {
+    res.status(400).send({message : "Something went wrong"});
+  }
+});
+
+
+/* COURSE ALLOTMENT */
+router.post('/lmscourse-allot-school', async (req, res) => {
+  try{
+
+    const school = await userModel.findOneAndUpdate(
+      {userId : req.body.userId},
+      {$addToSet: {lmsCourse: req.body.lmsCourse}}
+    );
+      
+    school.save(function(err) {
+      if(err) {
+        res.status(400).send({message : "LMS Course not alloted"});
+      }
+      else {
+        res.status(200).send({message : "Course alloted successfully"});
+      }
+    });
+
+  } catch(err){
+    res.status(400).send({message : "Something went wrong"});
+  }
+});
+
+
+/* DOCUMENT UPLOAD GENRAL */
+router.post('/school-notice', document.single('notice'), async (req, res) => {
+
+  try {
+    
+    // for verfiying that image exists in the request
+    function file(){
+      if (req.file) {
+        return req.file.filename;
+      } 
+    }
+    
+    const notice = new schoolDocumentModel({
+      type : "Notice",
+      title : req.body.title,
+      url : `${req.protocol}://${req.get("host")}/document/${file()}`
+    });
+    
+    notice.save(function (err) {
+      if(err){
+        res.status(400).send({message: 'Notice to add report'});
+      }
+      else{
+        res.status(200).send({message: 'Notice added successfully', result : notice});
+      }
+    });
+  } 
+  catch (err) {
+    res.status(400).send({message : "Something went wrong"});
+  }
+});
+
+
+/* REPORT UPLOAD SCHOOLWISE */
+router.post('/school-report', document.single('report'), async (req, res) => {
+
+  try {
+    
+    // for verfiying that image exists in the request
+    function file(){
+      if (req.file) {
+        return req.file.filename;
+      } 
+    }
+
+    const schoolExist = await userModel.findOne({
+      userId : req.body.schoolId
+    });
+
+    if (!schoolExist) return res.status(400).send(
+      {message : "School Id is wrong"}
+    );
+    
+    const report = new schoolDocumentModel({
+      schoolId : req.body.schoolId,
+      type : "Report",
+      title : req.body.title,
+      url : `${req.protocol}://${req.get("host")}/document/${file()}`
+    });
+    
+    report.save(function (err) {
+      if(err){
+        res.status(400).send({message: 'Unable to add report'});
+      }
+      else{
+        res.status(200).send({message: 'Report added successfully', result : report});
+      }
+    });
+  } 
+  catch (err) {
+    res.status(400).send({message : "Something went wrong"});
+  }
+});
+
+
+/* ADD DATE TYPE */
+router.post('/date-type', async (req, res) => {
+  try {
+
+    const dateExist = await dateTypeModel.findOne({
+      date : req.body.date
+    });
+    if(dateExist) return res.status(400).send({message : "Date already assigned"});
+
+    const date = new dateTypeModel({
+      date : req.body.date,
+      type : req.body.type
+    });
+
+    date.save(function (err) {
+      if(err){
+        res.status(400).send({message: 'Unable to add Date'});
+      }
+      else{
+        res.status(200).send({message: 'Date added successfully', result : date});
+      }
+    });
+    
+  } catch (err) {
+    res.status(400).send({message : "Something went wrong"});
+  }
+});
+
+
+/* get date */
+router.get('/get-date-type/:date', async (req, res) => {
+  try {
+
+    const date = await dateTypeModel.findOne({
+      date : req.params.date
+    });
+
+    res.status(200).send({result : date});
+    
+  } catch (err) {
+    res.status(400).send({message : "Something went wrong"});
+  }
+})
+
+/* ========== SCHOOL ADMIN PART END =========== */
+
+
+
+/* ========== AMP ADMIN PART START =========== */
+
+/* AMP-ADMIN-LOGIN */
+router.post('/ampadmin-login', async (req, res) => {
+
+  // checking mail exist in db
+  const admin = await userModel.findOne({ email: req.body.email });
+  if(!admin) return res.status(400).send("Email is wrong");
+
+  // checking password
+  const validPass = (req.body.pass === admin.pass);
+  if(!validPass) return res.status(400).send("Invalid Password");
+
+  // checking role
+  const validRole = (admin.role === "ampadmin");
+  if(!validRole) return res.status(400).send("User not authorized");
+
+  // token generation
+  const token = jwt.sign({_id: admin._id, role: admin.role}, process.env.TOKEN_SECRET);
+  res.header("auth-token", token).send({ token: token, result : admin});
+});
+
+
+
+
+/* ========== AMP ADMIN PART END =========== */
+
+
+
+
+
+
+/* ========== DATE PART START =========== */
+
+/* Get no of date */
+router.get('/total-working-days', async (req, res) => {
+
+  try {
+
+    const dateCount = await dateTypeModel.count({
+      type : "Active"
+    });
+
+    res.status(200).send({result : dateCount});
+    
+  } catch (err) {
+    res.status(400).send({message : "Something went wrong"})
+  }
+
+});
+
+
+
+
+/* ========== DATE PART END =========== */
+
+
+
+
+
+
 
 
 

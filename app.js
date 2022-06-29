@@ -23,6 +23,7 @@ var usersRouter = require('./routes/users');
 var lmsCoursesRouter = require('./routes/lmsCourses');
 var moduleCoursesRouter = require('./routes/moduleCourses');
 var crashCoursesRouter = require('./routes/crashCourses'); 
+var schoolRouter = require('./routes/school');
   
 var app = express();
 
@@ -45,6 +46,7 @@ app.use('/users', usersRouter);
 app.use('/lmsCourses', lmsCoursesRouter);
 app.use('/moduleCourses', moduleCoursesRouter);
 app.use('/crashCourses', crashCoursesRouter);
+app.use('/schools', schoolRouter);
 app.use((req, res, next) => {
   res.sendFile(path.join(__dirname, "angular", "index.html"));
 });

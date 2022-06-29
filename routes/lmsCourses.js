@@ -1,5 +1,6 @@
 var express = require('express');
 var router = express.Router();
+
 const multer = require('multer');
 
 const userModel = require('../models/users.model');
@@ -7,6 +8,7 @@ const lmsCourseModel = require('../models/lmsCourse.model');
 const topicModel = require('../models/topic.model');
 const liveClassModel = require('../models/liveClass.model');
 const remIdModel = require('../models/remId.model');
+const registrationCodeModel = require('../models/registrationCode.model');
 
 // Document Storage
 const storage = multer.diskStorage({
@@ -384,6 +386,104 @@ router.put('/delete-topic-note/:topicId', async( req, res ) => {
         }
     });
 });
+
+
+// create new or reset registration code
+router.get('/reset-registration-code', async (req, res) => {
+    try {        
+        regCode = await registrationCodeModel.findOne({
+            regCodeTittle : "registrationCode"
+        });
+
+        function randCode(){
+            var code = "Gravity-";
+            var str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' + 'abcdefghijklmnopqrstuvwxyz0123456789';
+            
+            for (i = 1; i <= 5; i++) {
+                var char = Math.floor(Math.random() * str.length + 1);
+                code = code + str.charAt(char);
+            }
+
+            return code;
+        }
+
+        if(!(regCode)){
+            genRegCode = new registrationCodeModel({
+                regCodeTittle : "registrationCode",
+                regCode : randCode()
+            });
+
+            genRegCode.save(function(err){
+                if(err){
+                    res.status(400).send({message : "Registration Code generation failed"});
+                }
+                else{
+                    res.status(200).send({message : "Registration Code generated successfully", regCode : genRegCode.regCode});
+                }
+            });
+        }
+        else{
+
+            regCode.regCode = randCode();
+
+            regCode.save(function(err){
+                if(err){
+                    res.status(400).send({message : "Registration Code updation failed"});
+                }
+                else{
+                    res.status(200).send({message : "Registration Code updated successfully", regCode : regCode.regCode});
+                }
+            });
+        }
+
+    } 
+    catch (err) {
+        res.status(400).send({message : "Something went wrong"});
+    }
+});
+
+
+// get current registration code
+router.get('/get-registration-code', async (req, res) => {
+    try {
+
+        const regCode = await registrationCodeModel.find({
+            regCodeTittle : "registrationCode"
+        });
+
+        res.status(200).send({result : regCode});
+        
+    } catch (err) {
+        res.status(400).send({message : "Something went wrong"});
+    }
+});
+
+
+// add course on basis of course
+/* router.get('/update-course', async (req, res) => {
+    try {
+             
+        const userList = await userModel.find(function( err, userList ){
+            for (let i = 0; i < userList.length; i++) {
+                if(
+                    ((userList[i].lmsCourse.includes("A1")) || (userList[i].lmsCourse.includes("A2"))) && !(userList[i].lmsCourse.includes("SRG-NEET"))                    
+                ){
+
+                    userList[i].lmsCourse.push("SRG-NEET");
+
+                    userList[i].save(function (err){
+                        console.log(userList[i].lmsCourse);
+                    });
+                }
+            }
+        });
+
+        res.status(200).send({message : "Update complete"});
+
+    } catch (err) {
+        res.status(400).send({message : "Something went wrong"});
+    }
+}); */
 
 
 module.exports = router;

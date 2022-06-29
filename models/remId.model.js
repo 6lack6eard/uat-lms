@@ -5,6 +5,7 @@ const remIdSchema = mongoose.Schema({
     remTopicId : Number,
     remSubTopicId : Number,
     remStudentId : Number,
+    remSchoolId : Number,
     remModuleTopicId : Number,
     remQuestionId : Number,
     remCrashCourseId : Number,
