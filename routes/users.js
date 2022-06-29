@@ -990,6 +990,24 @@ router.post('/addNewStudent', async function(req, res, next) {
 
 
 /* STUDENT LIST WITH FILTER */
+router.put('/filterStudentById', async (req, res)=>{
+  try {
+    const usersList = await userModel.find({
+      $or : [
+        { mobile : req.body.id }, 
+        { email : req.body.id }, 
+        { userId : req.body.id }
+      ]
+    });
+    res.status(200).send({result : usersList});
+
+  } catch (err) {
+    res.send(err);
+  }
+});
+
+
+/* STUDENT LIST WITH FILTER */
 router.put('/filterStudent', async (req, res)=>{
   try {
     const usersList = await userModel.find({
