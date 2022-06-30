@@ -1468,6 +1468,46 @@ router.get('/get-school-list', async (req, res) => {
 });
 
 
+/* GET SCHOOL STUDENT LIST */
+router.get('/get-school-student-list/:schoolId', async (req, res) => {
+  try {
+
+    const studentList = await userModel.find({
+      schoolRefId : req.params.schoolId
+    });
+
+    res.status(200).send({result : studentList});
+    
+  } catch (err) {
+    res.status(400).send({message : "Something went wrong"});
+  }
+});
+
+
+router.get('/change-student-plateform/:studentId', async (req, res) => {
+  try {
+
+    const student = await userModel.findOne({
+      userId : req.params.studentId
+    });
+
+    student.plateformRegegStatus = !student.plateformRegegStatus;
+
+    student.save(function (err){
+      if(err){
+        res.status(400).send({message : "Unable to update registration status"});
+      }
+      else{
+        res.status(200).send({message : "Registration status updated successfully"});
+      }
+    });
+    
+  } catch (err) {
+    res.status(400).send({message : "Something went wrong"});
+  }
+});
+
+
 /* COURSE ALLOTMENT */
 router.post('/lmscourse-allot-school', async (req, res) => {
   try{

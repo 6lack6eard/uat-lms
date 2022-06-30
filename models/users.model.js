@@ -24,7 +24,10 @@ const userSchema = mongoose.Schema({
     role: String,
 
     schoolRefId: String,
-    plateformRegegStatus: Boolean
+    plateformRegegStatus: {
+        type : Boolean,
+        default : false
+    }
 
 });
 
