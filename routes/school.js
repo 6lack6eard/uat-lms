@@ -7,6 +7,7 @@ const fast2sms = require('fast-two-sms');
 const userModel = require('../models/users.model');
 const remIdModel = require('../models/remId.model');
 const lmsCourseModel = require('../models/lmsCourse.model');
+const topicModel = require('../models/topic.model');
 const schoolDocumentModel = require('../models/schoolDocument.model');
 
 
@@ -332,6 +333,63 @@ router.post('/assign-lmscourse/:schoolId', verify, async (req, res) => {
     }
 
 });
+
+
+/* get lms course */
+router.get('/get-lmscourse/:schoolId/:courseId', verify, async (req, res) => {
+
+    try {
+
+        const school = await userModel.findOne({
+            userId : req.params.schoolId
+        });
+
+        if(school.lmsCourse.includes(req.params.courseId)) {
+            const lmsCourse = await lmsCourseModel.findOne({
+                cName : req.params.courseId
+            });
+
+            res.status(200).send({result : lmsCourse});
+        }
+        else {
+            res.status(400).send({message : "You can't assign this course"});
+        }
+
+        
+    } catch (err) {
+        res.status(400).send({message : "Something went wrong"});
+    }
+
+});
+
+
+/* Get topics details for lms Course and subject */
+router.get('/get-lmscourse/:schoolId/:courseId/:subjectId', verify, async (req, res) => {
+    try {
+      const user = await userModel.findOne({userId : req.params.schoolId});
+      if(user.lmsCourse.includes(req.params.courseId)){
+        topicModel.find(
+          {
+            courseId : req.params.courseId, 
+            subjectId : req.params.subjectId
+          }, 
+          function(err, topicList){
+            if (err) {
+              res.send({status: 500, message: 'Some error occured'})
+            } else {
+              res.send({status: 200, result: topicList})
+            }
+          }
+        );
+      }
+      else{
+        res.send({message : "The course is not assigned to you"});
+      }
+    }
+    catch(err){
+      res.send(err);
+    }  
+  });
 
 
 /* STUDENT LIST WITH COURSE FILTER */
