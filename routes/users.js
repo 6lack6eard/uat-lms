@@ -39,11 +39,20 @@ const storage = multer.diskStorage({
     }
   }
 });
-
 const document = multer({
   storage: storage,
   limits: 20000000
 });
+
+// Trim spaces
+function trimSpace(value){
+  return value.trim();
+}
+
+// Trim spaces
+function lowerString(value){
+  return value.toLowerCase();
+}
 
 
 
@@ -210,6 +219,9 @@ router.post('/demo-register', async (req, res) => {
 /* LOGIN user */
 router.post('/login', async (req, res) => {
 
+  req.body.email = lowerString(trimSpace(req.body.email));
+  console.log(req.body.email);
+
   // checking mail exist in db
   const user = await userModel.findOne({
     $or: [
@@ -260,6 +272,8 @@ router.get('/profile/:studentId', verify, async (req, res) => {
 
 /* Edit user profile */
 router.put('/edit-profile/:studentId', verify, async (req, res) => {
+
+  req.body.email = lowerString(trimSpace(req.body.email));
 
   // check if the provided email already exists
   const user = await userModel.findOne({ email: req.body.email });
@@ -776,6 +790,8 @@ router.post('/payment/fail', async (req, res) => {
 /* ADMIN-LOGIN */
 router.post('/admin-login', async (req, res) => {
 
+  req.body.email = lowerString(trimSpace(req.body.email));
+
   // checking mail exist in db
   const admin = await userModel.findOne({ email: req.body.email });
   if(!admin) return res.status(400).send("Email is wrong");
@@ -798,6 +814,9 @@ router.post('/admin-login', async (req, res) => {
 router.post('/addNewStudent', async function(req, res, next) {
 
   try {
+
+    req.body.email = lowerString(trimSpace(req.body.email));
+    req.body.mobile = lowerString(trimSpace(req.body.mobile));
     
     // check if mobile already exists
     const mobileExist = await userModel.findOne({
@@ -992,6 +1011,9 @@ router.post('/addNewStudent', async function(req, res, next) {
 /* STUDENT LIST WITH FILTER */
 router.put('/filterStudentById', async (req, res)=>{
   try {
+    
+    req.body.id = lowerString(trimSpace(req.body.id));
+
     const usersList = await userModel.find({
       $or : [
         { mobile : req.body.id }, 
@@ -1010,6 +1032,8 @@ router.put('/filterStudentById', async (req, res)=>{
 /* STUDENT LIST WITH FILTER */
 router.put('/filterStudent', async (req, res)=>{
   try {
+    req.body.id = lowerString(trimSpace(req.body.id));
+
     const usersList = await userModel.find({
       $or : [
         { center : req.body.center }, 
@@ -1268,6 +1292,8 @@ router.put('/removeModulecourse', async (req, res) => {
 
 /* SUB-ADMIN-LOGIN */
 router.post('/subadmin-login', async (req, res) => {
+  
+  req.body.email = lowerString(trimSpace(req.body.email));
 
   // checking mail exist in db
   const admin = await userModel.findOne({ email: req.body.email });
@@ -1290,6 +1316,9 @@ router.post('/subadmin-login', async (req, res) => {
 /* STUDENT LIST WITH FILTER */
 router.put('/filterStudent/:center', async (req, res)=>{
   try {
+
+    req.body.id = lowerString(trimSpace(req.body.id));
+
     var updatedUserList = [];
     const usersList = await userModel.find({
       $or : [
@@ -1357,6 +1386,8 @@ router.put('/filterStudentByCourse/:center', async (req, res) => {
 /* SCHOOL-ADMIN-LOGIN */
 router.post('/schooladmin-login', async (req, res) => {
 
+  req.body.email = lowerString(trimSpace(req.body.email));
+
   // checking mail exist in db
   const admin = await userModel.findOne({
     $or : [
@@ -1387,6 +1418,10 @@ router.post('/schooladmin-login', async (req, res) => {
 router.post('/register-school', async (req, res) => {
 
   try {
+
+    req.body.email = lowerString(trimSpace(req.body.email));
+    req.body.mobile = lowerString(trimSpace(req.body.mobile));
+
 
     // check if school already exist
     const schoolExist = await userModel.findOne({
@@ -1484,6 +1519,7 @@ router.get('/get-school-student-list/:schoolId', async (req, res) => {
 });
 
 
+/* change allotment status */
 router.get('/change-student-plateform/:studentId', async (req, res) => {
   try {
 
@@ -1659,6 +1695,8 @@ router.get('/get-date-type/:date', async (req, res) => {
 
 /* AMP-ADMIN-LOGIN */
 router.post('/ampadmin-login', async (req, res) => {
+
+  req.body.email = lowerString(trimSpace(req.body.email));
 
   // checking mail exist in db
   const admin = await userModel.findOne({ email: req.body.email });

@@ -11,6 +11,18 @@ const topicModel = require('../models/topic.model');
 const schoolDocumentModel = require('../models/schoolDocument.model');
 
 
+
+// Trim spaces
+function trimSpace(value){
+    return value.trim();
+  }
+  
+  // Trim spaces
+  function lowerString(value){
+    return value.toLowerCase();
+  }
+
+
 /* get school profile */
 router.get('/profile/:schoolId', verify, async (req, res) => {
 
@@ -33,6 +45,8 @@ router.get('/profile/:schoolId', verify, async (req, res) => {
 router.post('/add-student/:schoolId', verify, async (req, res) => {
 
     try {
+        req.body.email = lowerString(trimSpace(req.body.email));
+        req.body.mobile = lowerString(trimSpace(req.body.mobile));
 
         // check if mobile already exists
         const mobileExist = await userModel.findOne({
