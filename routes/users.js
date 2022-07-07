@@ -220,13 +220,12 @@ router.post('/demo-register', async (req, res) => {
 router.post('/login', async (req, res) => {
 
   req.body.email = lowerString(trimSpace(req.body.email));
-  console.log(req.body.email);
 
   // checking mail exist in db
   const user = await userModel.findOne({
     $or: [
       { email: req.body.email }, 
-      { userId : req.body.email }, 
+      { userId : (req.body.email).toUpperCase() }, 
       { mobile : req.body.email }
     ]
   });
@@ -1018,7 +1017,7 @@ router.put('/filterStudentById', async (req, res)=>{
       $or : [
         { mobile : req.body.id }, 
         { email : req.body.id }, 
-        { userId : req.body.id }
+        { userId : (req.body.id).toUpperCase() }
       ]
     });
     res.status(200).send({result : usersList});
@@ -1043,7 +1042,7 @@ router.put('/filterStudent', async (req, res)=>{
         { schoolRefId : req.body.schoolRefId },
         { mobile : req.body.id }, 
         { email : req.body.id }, 
-        { userId : req.body.id }
+        { userId : (req.body.id).toUpperCase() }
       ]
     });
     res.status(200).send({result : usersList});
@@ -1327,7 +1326,7 @@ router.put('/filterStudent/:center', async (req, res)=>{
         { status : req.body.status }, 
         { mobile : req.body.id }, 
         { email : req.body.id }, 
-        { userId : req.body.id }
+        { userId : (req.body.id).toUpperCase() }
       ]
     });
 
@@ -1392,7 +1391,7 @@ router.post('/schooladmin-login', async (req, res) => {
   const admin = await userModel.findOne({
     $or : [
       { email: req.body.email },
-      { userId: req.body.email },
+      { userId: (req.body.email).toUpperCase() },
       { mobile: req.body.email }
     ]
   });
@@ -1501,6 +1500,45 @@ router.get('/get-school-list', async (req, res) => {
     res.status(400).send({message : "Something went wrong"});
   }
 });
+
+
+/* EDIT SCHOOL DETAILS */
+router.put('/edit-school-detail/:schoolId', async (req, res) => {
+  try {
+
+    req.body.email = lowerString(trimSpace(req.body.email));
+    req.body.mobile = lowerString(trimSpace(req.body.mobile));
+
+    const school = await userModel.findOne({
+      userId : req.params.schoolId
+    });
+
+    if(req.body.name !== ""){
+      school.name = req.body.name;
+    }
+    if(req.body.mobile !== ""){
+      school.mobile = req.body.mobile;
+    }
+    if(req.body.email !== ""){
+      school.email = req.body.email;
+    }
+    if(req.body.pass !== ""){
+      school.pass = req.body.pass;
+    }
+
+    school.save(function(err){
+      if(err){
+        res.status(400).send({message : "Unable to update school details"});
+      }
+      else{
+        res.status(200).send({message : "School details updated successfully"});
+      }
+    });
+    
+  } catch (err) {
+    res.status(400).send({message : "Something went wrong"});
+  }
+})
 
 
 /* GET SCHOOL STUDENT LIST */
