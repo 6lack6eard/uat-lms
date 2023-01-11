@@ -9,6 +9,8 @@ const remIdSchema = mongoose.Schema({
     remModuleTopicId : Number,
     remQuestionId : Number,
     remCrashCourseId : Number,
+    remAmpStudentId : Number,
+    remAmpInstituteId : Number,
 });
 
 const remIdModel = mongoose.model('RemId', remIdSchema);
