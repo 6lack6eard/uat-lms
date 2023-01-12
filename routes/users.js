@@ -1910,6 +1910,13 @@ router.post('/ampRegisterStudent', async (req, res) => {
           res.send({status: 500, message: 'Registration failed'});
       }
       else{
+        // sms
+        // send sms to the no.
+        fast2sms.sendMessage({
+          authorization : process.env.FAST_2_SMS,
+          message : `Dear ${ampStudent.name},\nYou have successfully registered for NEET CRASH COURSE - Gravity Classes`,
+          numbers : [ampStudent.mobile]
+        });
 
         // payment
         const session = await stripe.checkout.sessions.create({
@@ -1918,9 +1925,9 @@ router.post('/ampRegisterStudent', async (req, res) => {
               price_data: {
                 currency: 'inr',
                 product_data: {
-                  name: 'AMP Course'
+                  name: '5000(90% Scholarship by AMP)'
                 },
-                unit_amount: 1 * 100,
+                unit_amount: 500 * 100,
               },
               quantity: 1,
             },
@@ -1969,7 +1976,7 @@ router.post('/ampRegisterInstitute', async (req, res) => {
       userId: `GRAMPIN${srno}`,
       name: req.body.name,
       email: req.body.email,
-      contact: req.body.contact,
+      mobile: req.body.contact,
       contactPersonName: req.body.contactPersonName,
       contactPersonMobile: req.body.contactPersonMobile,
       address: req.body.address,
@@ -1986,6 +1993,14 @@ router.post('/ampRegisterInstitute', async (req, res) => {
           res.send({status: 500, message: 'Registration failed'});
       }
       else{
+        // sms
+        // send sms to the no.
+        fast2sms.sendMessage({
+          authorization : process.env.FAST_2_SMS,
+          message : `Dear ${ampInstitute.name},\nYou have successfully registered for NEET CRASH COURSE - Gravity Classes`,
+          numbers : [ampInstitute.mobile]
+        });
+
           // payment
         const session = await stripe.checkout.sessions.create({
           line_items: [
@@ -1993,7 +2008,7 @@ router.post('/ampRegisterInstitute', async (req, res) => {
               price_data: {
                 currency: 'inr',
                 product_data: {
-                  name: 'AMP Course'
+                  name: '5000(90% Scholarship by AMP)'
                 },
                 unit_amount: 1 * 100,
               },
@@ -2005,7 +2020,7 @@ router.post('/ampRegisterInstitute', async (req, res) => {
           cancel_url: `${process.env.BASE_URL}/ampneet2023/cancel/${ampInstitute.userId}`
         });
 
-        console.log(session);
+        // console.log(session);
 
         const paymentLog = new ampPaymentLogModel({
           userId: ampInstitute.userId,
@@ -2037,17 +2052,45 @@ router.get('/ampNeet/success/:userId', async (req, res) => {
 
     if(!paymentLog) res.send({"message" : "Log not found"});    
 
-    const paymentIntent = await stripe.confirmCardPayment(paymentLog[0].clientSecret);
-    console.log(paymentIntent);
-    if (paymentIntent && paymentIntent.status === 'succeeded') {
-      const ampUser = await ampStudentModel.findOne({
-        userId : req.params.userId
-      });
+    const paymentIntent = await stripe.checkout.sessions.retrieve(paymentLog[0].clientSecret);
+    // console.log(paymentIntent);
+
+    if (paymentIntent && paymentIntent.payment_status === 'paid') {
+      var ampUser;
+
+      if(((req.params.userId).substring(5, 7)) == "ST"){
+        ampUser = await ampStudentModel.findOne({
+          userId : req.params.userId
+        });
+      }
+      else{
+        ampUser = await ampInstituteModel.findOne({
+          userId : req.params.userId
+        });
+      }
+
+      
 
       ampUser.paymentStatus = true;
       ampUser.save();
 
+      // sms
+      // send sms to the no.
+      fast2sms.sendMessage({
+        authorization : process.env.FAST_2_SMS,
+        message : `Dear ${ampUser.name},\nYour payment of Rs.500/- is successfully received for NEET CRASH COURSE - Gravity Classes`,
+        numbers : [ampUser.mobile]
+      });
+
       res.send({"message" : "Payment successful"});
+    }
+    else{
+      // send sms to the no.
+      fast2sms.sendMessage({
+        authorization : process.env.FAST_2_SMS,
+        message : `Dear ${ampUser.name},\nYour payment of Rs.500/- is FAILED - Gravity Classes`,
+        numbers : [ampUser.mobile]
+      });
     }
     
   } catch (err) {

@@ -4,7 +4,7 @@ const ampInstituteSchema = mongoose.Schema({
     userId: String,
     name: String,
     email: String,
-    contact: String,
+    mobile: String,
     contactPersonName: String,
     contactPersonMobile: String,
     address: String,
