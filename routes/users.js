@@ -10,7 +10,7 @@ const jsSHA = require('jssha');
 const request = require('request');
 const multer = require('multer');
 const Stripe = require('stripe');
-const stripe = Stripe('sk_test_51MIVIhSCZbX8F8OBmpkSlYeNiqGGkSwhLjOGaVXT80YWY8PwaDyCTYKJpc4zP0vLwQzQVytJlc4oXjoX036bEqR900HnsDN62I');
+const stripe = Stripe('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');
 
 const userModel = require('../models/users.model');
 const remIdModel = require('../models/remId.model');
@@ -1925,7 +1925,7 @@ router.post('/ampRegisterStudent', async (req, res) => {
               price_data: {
                 currency: 'inr',
                 product_data: {
-                  name: '5000(90% Scholarship by AMP)'
+                  name: '5000 INR(90% Scholarship by AMP)'
                 },
                 unit_amount: 500 * 100,
               },
@@ -2008,9 +2008,9 @@ router.post('/ampRegisterInstitute', async (req, res) => {
               price_data: {
                 currency: 'inr',
                 product_data: {
-                  name: '5000(90% Scholarship by AMP)'
+                  name: '5000 INR'
                 },
-                unit_amount: 1 * 100,
+                unit_amount: 5000 * 100,
               },
               quantity: 1,
             },
