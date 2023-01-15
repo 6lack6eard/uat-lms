@@ -1586,6 +1586,34 @@ router.get('/get-school-list', async (req, res) => {
 });
 
 
+/* GET AMP STUDENT LIST */
+router.get('/get-amp-student-list', async (req, res) => {
+  try {
+
+    const ampStudentList = await ampStudentModel.find();
+
+    res.status(200).send({result : ampStudentList});
+    
+  } catch (err) {
+    res.status(400).send({message : "Something went wrong"});
+  }
+});
+
+
+/* GET AMP INSTITUTE LIST */
+router.get('/get-amp-institute-list', async (req, res) => {
+  try {
+
+    const ampInstituteList = await ampInstituteModel.find();
+
+    res.status(200).send({result : ampInstituteList});
+    
+  } catch (err) {
+    res.status(400).send({message : "Something went wrong"});
+  }
+});
+
+
 /* EDIT SCHOOL DETAILS */
 router.put('/edit-school-detail/:schoolId', async (req, res) => {
   try {
