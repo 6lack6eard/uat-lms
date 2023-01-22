@@ -2139,13 +2139,13 @@ router.post('/ampRegisterStudent', async (req, res) => {
           mobile: ampStudent.mobile,
           service_provide: 'test',
           amount: 1,
-          call_back_url : `http://localhost:3000/users/ampNeet/payuPayment/success/${ampStudent.userId}`,
+          call_back_url : `${process.env.BASE_URL}/users/ampNeet/payuPayment/success/${ampStudent.userId}`,
           payu_merchant_key : process.env.PAYU_MERCHANT_KEY,
           payu_merchant_salt_version_1 : process.env.PAYU_MERCHANT_SALT_V1,
           payu_merchant_salt_version_2 : process.env.PAYU_MERCHANT_SALT_V2,
           payu_url : process.env.PAYU_URL,
-          payu_fail_url : `http://localhost:3000/users/ampNeet/payuPayment/cancel/${ampStudent.userId}`,
-          payu_cancel_url : `http://localhost:3000/users/ampNeet/payuPayment/cancel/${ampStudent.userId}`,
+          payu_fail_url : `${process.env.BASE_URL}/users/ampNeet/payuPayment/cancel/${ampStudent.userId}`,
+          payu_cancel_url : `${process.env.BASE_URL}/users/ampNeet/payuPayment/cancel/${ampStudent.userId}`,
           hashString : '',
           payu_sha_token : ''
         }
@@ -2244,13 +2244,13 @@ router.post('/ampRegisterInstitute', async (req, res) => {
           mobile: ampInstitute.mobile,
           service_provide: 'test',
           amount: 1,
-          call_back_url : `http://localhost:3000/users/ampNeet/payuPayment/success/${ampInstitute.userId}`,
+          call_back_url : `${process.env.BASE_URL}/users/ampNeet/payuPayment/success/${ampInstitute.userId}`,
           payu_merchant_key : process.env.PAYU_MERCHANT_KEY,
           payu_merchant_salt_version_1 : process.env.PAYU_MERCHANT_SALT_V1,
           payu_merchant_salt_version_2 : process.env.PAYU_MERCHANT_SALT_V2,
           payu_url : process.env.PAYU_URL,
-          payu_fail_url : `http://localhost:3000/users/ampNeet/payuPayment/cancel/${ampInstitute.userId}`,
-          payu_cancel_url : `http://localhost:3000/users/ampNeet/payuPayment/cancel/${ampInstitute.userId}`,
+          payu_fail_url : `${process.env.BASE_URL}/users/ampNeet/payuPayment/cancel/${ampInstitute.userId}`,
+          payu_cancel_url : `${process.env.BASE_URL}/users/ampNeet/payuPayment/cancel/${ampInstitute.userId}`,
           hashString : '',
           payu_sha_token : ''
         }
