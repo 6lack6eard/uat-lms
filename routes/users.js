@@ -2201,7 +2201,8 @@ router.post('/ampRegisterInstitute', async (req, res) => {
       pincode: req.body.pincode,
       natureOfInstitute: req.body.natureOfInstitute,
       infrastrucuture: req.body.infrastrucuture,
-      board: req.body.board
+      board: req.body.board,
+      paymentStatus: false
     });
 
     ampInstitute.save(async function (err) {
