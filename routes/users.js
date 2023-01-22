@@ -10,7 +10,7 @@ const jsSHA = require('jssha');
 const request = require('request');
 const multer = require('multer');
 const Stripe = require('stripe');
-const stripe = Stripe('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');
+const stripe = Stripe(process.env.STRIP_SECRET_KEY);
 
 const userModel = require('../models/users.model');
 const remIdModel = require('../models/remId.model');
