@@ -787,22 +787,22 @@ router.post('/payment/fail', async (req, res) => {
 router.get('/payment', async (req, res) => { 
 
   const payDetails = {
-      txnId:  `TxnId${Number(new Date)}`,
-      plan_name : "Plan1",
-      first_name: 'Vaibhav',
-      email: 'test@example.com',
-      mobile: '7390808334',
-      service_provide: 'test',
-      amount: 1,
-      call_back_url : `http://localhost:3000/users/payment/success`,
-      payu_merchant_key : process.env.PAYU_MERCHANT_KEY,
-      payu_merchant_salt_version_1 : process.env.PAYU_MERCHANT_SALT_V1,
-      payu_merchant_salt_version_2 : process.env.PAYU_MERCHANT_SALT_V2,
-      payu_url : process.env.PAYU_URL,
-      payu_fail_url : `http://localhost:3000/users/payment/failed`,
-      payu_cancel_url : `http://localhost:3000/users/payment/cancel`,
-      hashString : '',
-      payu_sha_token : ''
+    txnId:  `TxnId${Number(new Date)}`,
+    plan_name : "Plan1",
+    first_name: 'Vaibhav',
+    email: 'test@example.com',
+    mobile: '7390808334',
+    service_provide: 'test',
+    amount: 1,
+    call_back_url : `http://localhost:3000/users/payment/success`,
+    payu_merchant_key : process.env.PAYU_MERCHANT_KEY,
+    payu_merchant_salt_version_1 : process.env.PAYU_MERCHANT_SALT_V1,
+    payu_merchant_salt_version_2 : process.env.PAYU_MERCHANT_SALT_V2,
+    payu_url : process.env.PAYU_URL,
+    payu_fail_url : `http://localhost:3000/users/payment/failed`,
+    payu_cancel_url : `http://localhost:3000/users/payment/cancel`,
+    hashString : '',
+    payu_sha_token : ''
   }
   
   payDetails.hashString = `${process.env.PAYU_MERCHANT_KEY}|${payDetails.txnId}|${parseInt(payDetails.amount)}|${payDetails.plan_name}|${payDetails.first_name}|${payDetails.email}|||||||||||${process.env.PAYU_MERCHANT_SALT_V1}`;
@@ -1904,7 +1904,8 @@ router.get('/total-working-days', async (req, res) => {
 
 /* ========== AMP 2023 CRASH COURSE START =========== */
 
-router.post('/ampRegisterStudent', async (req, res) => {
+// stripe payment gateway
+/* router.post('/ampRegisterStudent', async (req, res) => {
   try {
 
     // incrementing student id
@@ -2066,6 +2067,215 @@ router.post('/ampRegisterInstitute', async (req, res) => {
   } catch (err) {
     res.status(400).send({message : "Something went wrong"});
   }
+}); */
+
+
+router.post('/ampRegisterStudent', async (req, res) => {
+  try {
+
+    // incrementing student id
+    const remId = await remIdModel.findOne({remTittle : 'RemTable'});
+    const id = (remId.remAmpStudentId + 1);
+    const remIdUpdate = await remIdModel.findOneAndUpdate(
+        {remTittle : 'RemTable'},
+        {remAmpStudentId : id}
+    );
+    remIdUpdate.save();
+    // genrate srno
+    let srno = (remIdUpdate.remAmpStudentId).toString().padStart(6, '0');
+
+    const ampStudent = await new ampStudentModel({
+      userId: `GRAMPST${srno}`,
+      name: req.body.name,
+      fname: req.body.fname,
+      mobile: req.body.mobile,
+      email: req.body.email,
+      dob: req.body.dob,
+      city: req.body.city,
+      state: req.body.state,
+      class: req.body.class,
+      school: req.body.school,
+      aadharno: req.body.aadharno,
+      paymentStatus: false
+    });
+
+    ampStudent.save(async function (err) {
+      if(err){
+          res.send({status: 500, message: 'Registration failed'});
+      }
+      else{
+        // sms
+        // send sms to the no.
+        fast2sms.sendMessage({
+          authorization : process.env.FAST_2_SMS,
+          message : `Dear ${ampStudent.name},\nYou have successfully registered for NEET CRASH COURSE - Gravity Classes`,
+          numbers : [ampStudent.mobile]
+        });
+
+        // payment
+        /* const session = await stripe.checkout.sessions.create({
+          line_items: [
+            {
+              price_data: {
+                currency: 'inr',
+                product_data: {
+                  name: '5000 INR(90% Scholarship by AMP)'
+                },
+                unit_amount: 500 * 100,
+              },
+              quantity: 1,
+            },
+          ],
+          mode: 'payment',
+          success_url: `${process.env.BASE_URL}/ampneet2023/success/${ampStudent.userId}`,
+          cancel_url: `${process.env.BASE_URL}/ampneet2023/cancel/${ampStudent.userId}`
+        }); */
+
+        const payDetails = {
+          txnId:  `TxnId${Number(new Date)}`,
+          plan_name : "5000 INR(90% Scholarship by AMP)",
+          first_name: ampStudent.name,
+          email: ampStudent.email,
+          mobile: ampStudent.mobile,
+          service_provide: 'test',
+          amount: 1,
+          call_back_url : `http://localhost:3000/users/ampNeet/payuPayment/success/${ampStudent.userId}`,
+          payu_merchant_key : process.env.PAYU_MERCHANT_KEY,
+          payu_merchant_salt_version_1 : process.env.PAYU_MERCHANT_SALT_V1,
+          payu_merchant_salt_version_2 : process.env.PAYU_MERCHANT_SALT_V2,
+          payu_url : process.env.PAYU_URL,
+          payu_fail_url : `http://localhost:3000/users/ampNeet/payuPayment/cancel/${ampStudent.userId}`,
+          payu_cancel_url : `http://localhost:3000/users/ampNeet/payuPayment/cancel/${ampStudent.userId}`,
+          hashString : '',
+          payu_sha_token : ''
+        }
+        
+        payDetails.hashString = `${process.env.PAYU_MERCHANT_KEY}|${payDetails.txnId}|${parseInt(payDetails.amount)}|${payDetails.plan_name}|${payDetails.first_name}|${payDetails.email}|||||||||||${process.env.PAYU_MERCHANT_SALT_V1}`;
+        payDetails.payu_sha_token = crypto.createHash('sha512').update(payDetails.hashString).digest('hex');
+
+        // console.log(payDetails);
+
+        const paymentLog = new ampPaymentLogModel({
+          userId: ampStudent.userId,
+          clientSecret: payDetails.txnId,
+          log: JSON.stringify(payDetails)
+        });
+
+        paymentLog.save();
+        
+        res.status(200).send({info : payDetails});
+          // res.send({status: 200, message: 'Registration successful'});
+      }
+  });
+    
+  } catch (err) {
+    res.status(400).send({message : "Something went wrong"});
+  }
+});
+
+
+router.post('/ampRegisterInstitute', async (req, res) => {
+  try {
+
+    // incrementing student id
+    const remId = await remIdModel.findOne({remTittle : 'RemTable'});
+    const id = (remId.remAmpInstituteId + 1);
+    const remIdUpdate = await remIdModel.findOneAndUpdate(
+        {remTittle : 'RemTable'},
+        {remAmpInstituteId : id}
+    );
+    remIdUpdate.save();
+    // genrate srno
+    let srno = (remIdUpdate.remAmpInstituteId).toString().padStart(6, '0');
+
+    const ampInstitute = await new ampInstituteModel({
+      userId: `GRAMPIN${srno}`,
+      name: req.body.name,
+      email: req.body.email,
+      mobile: req.body.contact,
+      contactPersonName: req.body.contactPersonName,
+      contactPersonMobile: req.body.contactPersonMobile,
+      address: req.body.address,
+      city: req.body.city,
+      state: req.body.state,
+      pincode: req.body.pincode,
+      natureOfInstitute: req.body.natureOfInstitute,
+      infrastrucuture: req.body.infrastrucuture,
+      board: req.body.board
+    });
+
+    ampInstitute.save(async function (err) {
+      if(err){
+          res.send({status: 500, message: 'Registration failed'});
+      }
+      else{
+        // sms
+        // send sms to the no.
+        fast2sms.sendMessage({
+          authorization : process.env.FAST_2_SMS,
+          message : `Dear ${ampInstitute.name},\nYou have successfully registered for NEET CRASH COURSE - Gravity Classes`,
+          numbers : [ampInstitute.mobile]
+        });
+
+          // payment
+        /* const session = await stripe.checkout.sessions.create({
+          line_items: [
+            {
+              price_data: {
+                currency: 'inr',
+                product_data: {
+                  name: '5000 INR'
+                },
+                unit_amount: 5000 * 100,
+              },
+              quantity: 1,
+            },
+          ],
+          mode: 'payment',
+          success_url: `${process.env.BASE_URL}/ampneet2023/success/${ampInstitute.userId}`,
+          cancel_url: `${process.env.BASE_URL}/ampneet2023/cancel/${ampInstitute.userId}`
+        }); */
+
+        const payDetails = {
+          txnId:  `TxnId${Number(new Date)}`,
+          plan_name : "5000 INR",
+          first_name: ampInstitute.name,
+          email: ampInstitute.email,
+          mobile: ampInstitute.mobile,
+          service_provide: 'test',
+          amount: 1,
+          call_back_url : `http://localhost:3000/users/ampNeet/payuPayment/success/${ampInstitute.userId}`,
+          payu_merchant_key : process.env.PAYU_MERCHANT_KEY,
+          payu_merchant_salt_version_1 : process.env.PAYU_MERCHANT_SALT_V1,
+          payu_merchant_salt_version_2 : process.env.PAYU_MERCHANT_SALT_V2,
+          payu_url : process.env.PAYU_URL,
+          payu_fail_url : `http://localhost:3000/users/ampNeet/payuPayment/cancel/${ampInstitute.userId}`,
+          payu_cancel_url : `http://localhost:3000/users/ampNeet/payuPayment/cancel/${ampInstitute.userId}`,
+          hashString : '',
+          payu_sha_token : ''
+        }
+        
+        payDetails.hashString = `${process.env.PAYU_MERCHANT_KEY}|${payDetails.txnId}|${parseInt(payDetails.amount)}|${payDetails.plan_name}|${payDetails.first_name}|${payDetails.email}|||||||||||${process.env.PAYU_MERCHANT_SALT_V1}`;
+        payDetails.payu_sha_token = crypto.createHash('sha512').update(payDetails.hashString).digest('hex');
+
+        // console.log(session);
+
+        const paymentLog = new ampPaymentLogModel({
+          userId: ampInstitute.userId,
+          clientSecret: payDetails.txnId,
+          log: JSON.stringify(payDetails)
+        });
+
+        paymentLog.save();
+        
+        res.status(200).send({info : payDetails});
+        // res.send({status: 200, message: 'Registration successful'});
+      }
+  });
+    
+  } catch (err) {
+    res.status(400).send({message : "Something went wrong"});
+  }
 });
 
 
@@ -2129,10 +2339,109 @@ router.get('/ampNeet/success/:userId', async (req, res) => {
 
 
 
+router.post('/ampNeet/payuPayment/success/:userId', async (req, res) => { 
+  // console.log(req.body);
 
-/* const session = await stripe.checkout.sessions.retrieve(
-  'cs_test_a1sfixjO19hmW3BLgItkZJh8N9Si0oeapjIEdool9oIisII1xGw8kS4SBB'
-); */
+  try {
+
+    const paymentLog = await ampPaymentLogModel.find({
+      userId : req.params.userId
+    }).sort(
+      {createdTime : -1}
+    );
+
+    if(!paymentLog) res.send({"message" : "Log not found"});
+
+    if (req.body.status === 'success') {
+      var ampUser;
+
+      if(((req.params.userId).substring(5, 7)) == "ST"){
+        ampUser = await ampStudentModel.findOne({
+          userId : req.params.userId
+        });
+      }
+      else{
+        ampUser = await ampInstituteModel.findOne({
+          userId : req.params.userId
+        });
+      }      
+
+      ampUser.paymentStatus = true;
+      ampUser.save();
+
+      // send sms to the no.
+      fast2sms.sendMessage({
+        authorization : process.env.FAST_2_SMS,
+        message : `Dear ${ampUser.name},\nYour payment of Rs.500/- is successfully received for NEET CRASH COURSE - Gravity Classes`,
+        numbers : [ampUser.mobile]
+      });
+
+      // res.send({"message" : "Payment successful"});
+      res.redirect(`${process.env.BASE_URL}/ampneet2023/success/${req.params.userId}`);
+    }
+    else{
+      // send sms to the no.
+      fast2sms.sendMessage({
+        authorization : process.env.FAST_2_SMS,
+        message : `Dear ${ampUser.name},\nYour payment of Rs.500/- is FAILED - Gravity Classes`,
+        numbers : [ampUser.mobile]
+      });
+    }
+    
+  } catch (err) {
+    console.log(err);
+    res.send({"message" : "Something went wrong"});
+  }
+
+
+});
+
+
+router.post('/ampNeet/payuPayment/failed/:userId', async (req, res) => { 
+  res.redirect(`${process.env.BASE_URL}/ampneet2023/cancel/${req.params.userId}`);
+});
+
+
+router.post('/ampNeet/payuPayment/cancel/:userId', async (req, res) => { 
+  
+  /* try {
+
+    const paymentLog = await ampPaymentLogModel.find({
+      userId : req.params.userId
+    }).sort(
+      {createdTime : -1}
+    );
+
+    if(!paymentLog) res.send({"message" : "Log not found"});
+
+    if (req.body.status === 'failure') {
+      var ampUser;
+
+      if(((req.params.userId).substring(5, 7)) == "ST"){
+        ampUser = await ampStudentModel.findOne({
+          userId : req.params.userId
+        });
+      }
+      else{
+        ampUser = await ampInstituteModel.findOne({
+          userId : req.params.userId
+        });
+      } 
+      
+      console.log(ampUser);
+
+      ampUser.paymentStatus = true;
+      ampUser.save();
+    }
+    
+  } catch (err) {
+    res.send({err});
+  } */
+
+
+  // console.log(req.body.status);
+  res.redirect(`${process.env.BASE_URL}/ampneet2023/cancel/${req.params.userId}`);
+});
 
 
 
