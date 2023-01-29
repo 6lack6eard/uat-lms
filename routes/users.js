@@ -6,6 +6,7 @@ const verify = require('./verifyToken');
 const nodemailer = require('nodemailer');
 const fast2sms = require('fast-two-sms');
 const crypto = require('crypto');
+const fs = require('fs');
 const jsSHA = require('jssha');
 const request = require('request');
 const multer = require('multer');
@@ -1591,6 +1592,17 @@ router.get('/get-amp-student-list', async (req, res) => {
   try {
 
     const ampStudentList = await ampStudentModel.find();
+    var content = "UserId,Name,Father Name,Mobile,Email,Aadhar no.,Class,School,City,State,Payment Status\n";
+    
+    for (let i = 0; i < ampStudentList.length; i++) {      
+      content = `${content}${ampStudentList[i].userId},${ampStudentList[i].name},${ampStudentList[i].fname},${ampStudentList[i].mobile},${ampStudentList[i].email},${ampStudentList[i].aadharno},${ampStudentList[i].class},${ampStudentList[i].school},${ampStudentList[i].city},${ampStudentList[i].state},${ampStudentList[i].paymentStatus ? 'Paid' : 'Unpaid'}\n`;
+    }
+
+    fs.writeFile('document/amp_student_list.csv', content, err => {
+      if (err) {
+        console.error(err);
+      }
+    });
 
     res.status(200).send({result : ampStudentList});
     
@@ -1605,6 +1617,17 @@ router.get('/get-amp-institute-list', async (req, res) => {
   try {
 
     const ampInstituteList = await ampInstituteModel.find();
+    var content = "UserId,Name,Email,Mobile,Contact Person's Name,Contact Person's Mobile,Address,City,State,Pincode,Nature Of Institute,Infrastructure,Board,Payment Status\n";
+    
+    for (let i = 0; i < ampInstituteList.length; i++) {      
+      content = `${content}${ampInstituteList[i].userId},${ampInstituteList[i].name},${ampInstituteList[i].email},${ampInstituteList[i].mobile},${ampInstituteList[i].contactPersonName},${ampInstituteList[i].contactPersonMobile},${(ampInstituteList[i].address).replace(/,/g, '|')},${ampInstituteList[i].city},${ampInstituteList[i].state},${ampInstituteList[i].pincode},${ampInstituteList[i].natureOfInstitute},${(ampInstituteList[i].infrastrucuture).replace(/,/g, '|')},${ampInstituteList[i].board},${ampInstituteList[i].paymentStatus ? 'Paid' : 'Unpaid'}\n`;
+    }
+
+    fs.writeFile('document/amp_institute_list.csv', content, err => {
+      if (err) {
+        console.error(err);
+      }
+    });
 
     res.status(200).send({result : ampInstituteList});
     
