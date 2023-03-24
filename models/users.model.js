@@ -19,6 +19,8 @@ const userSchema = mongoose.Schema({
     lmsCourse: [String],
     cbtCourse: [String],
     moduleCourse: [String],
+    batchId: String,
+    batchAttendance: [String],
     absentDate: [String],
     lastLogin: Date,
     role: String,

@@ -940,6 +940,12 @@ router.post('/addNewStudent', async function(req, res, next) {
       else if(c_center === "Indira Nagar"){
         g_center = "IN";
       }
+      else if(c_center === "Alambagh"){
+        g_center = "AB";
+      }
+      else if(c_center === "Ansal"){
+        g_center = "AN";
+      }
       
       return g_center;
     }
@@ -1340,7 +1346,7 @@ router.put('/removeLmscourse', async (req, res) => {
   } catch (err) {
     res.send({message : "Something went wrong."})
   }
-})
+});
 
 
 /* REMOVE MODULE COURSE */
@@ -1366,7 +1372,66 @@ router.put('/removeModulecourse', async (req, res) => {
   } catch (err) {
     res.send({message : "Something went wrong."})
   }
-})
+});
+
+
+/* ASIGN MODULE COURSE */
+router.put('/assignBatch', async (req, res)=>{
+  try {
+    const user = await userModel.findOneAndUpdate(
+      {$or: [
+        {userId: req.body.userId}, 
+        {email: req.body.userId}
+      ]},
+      {batchId: req.body.batchId}
+    );
+    
+    user.save(function (err) {
+      if (err) return res.status(400).send({message: 'Unable to assign Batch' });
+      else return res.status(200).send({message: 'Batch assigned successfully' });
+    });
+
+  } catch (err) {
+    res.send({message: "Something went wrong"})
+  }
+});
+
+
+/* REMOVE LMS COURSE */
+router.put('/removeBatch', async (req, res) => {
+  try {
+    const user = await userModel.findOneAndUpdate(
+      {$or: [
+        {userId: req.body.userId}, 
+        {email: req.body.userId}
+      ]},
+      {batchId: null}
+    );
+
+    user.save(function (err) {
+      if (err) return res.status(400).send({message: 'Unable to remove Batch' });
+      else return res.status(200).send({message: 'Batch removed successfully' });
+    });
+
+  } catch (err) {
+    res.status(400).send({ message: "Something went wrong." })
+  }
+});
+
+
+router.post('/uploadAttendance', async (req, res) => {
+  try {
+
+    const date = new Date();
+
+    console.log(date.toJSON().slice(0,10));
+
+    res.status(200).send({message : "ok"});
+    
+  } catch (err) {
+    res.status(400).send({message : "Something went wrong"});
+  }
+});
 
 /* ========== ADMIN PART END =========== */
 
