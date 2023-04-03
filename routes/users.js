@@ -7,6 +7,7 @@ const nodemailer = require('nodemailer');
 const fast2sms = require('fast-two-sms');
 const crypto = require('crypto');
 const fs = require('fs');
+const aesEncrypt = require('aes-encryption');
 const jsSHA = require('jssha');
 const request = require('request');
 const multer = require('multer');
@@ -2532,6 +2533,31 @@ router.post('/ampNeet/payuPayment/cancel/:userId', async (req, res) => {
   res.redirect(`${process.env.BASE_URL}/ampneet2023/cancel/${req.params.userId}`);
 });
 
+
+/* router.get('/iciciBankPayment', async (req, res) => {
+  try {
+
+    const aes = new aesEncrypt;
+    aes.setSecretKey('1162810211105034');
+
+    var referenceNo = '';
+    var subMerchantId = '';
+    var pgAmount = '';
+    var mandatoryFields = '';
+    var mobileNo = '';
+    var amount = '';
+    var optionalFields = '';
+    var returnUrl = '';
+    var transactionAmount = '';
+    var paymode = '';
+
+    res.redirect(`https://eazypay.icicibank.com/EazyPG?merchantid=365707&mandatory%20fields=jq86vXf8bAcYAoCkkpFIxA==&optional%20fields=&returnurl=7B4oT2UJD73PuvEEKf8BCdSkbMZGUZxLQk2YtAPxnNhfXmgfQFTVBgldy/f8onRf&Reference%20No=1mO3pIZviHX/mNxbrXBTgw==&submerchantid=+4DyREHuXPOnx4GWtsIwcw==&transaction%20amount=uvc99Yb/nzlcq3DqYdGnag==&paymode=jYluS+ctiCPrWTgGg37y3g==`);
+
+  }
+  catch (err) {
+    res.status(400).send({message : "Something went wrong"});
+  }
+}); */
 
 
 /* ========== AMP 2023 CRASH COURSE END =========== */
