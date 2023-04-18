@@ -68,17 +68,55 @@ function lowerString(value){
 
 /* REGISTER new demo user */
 router.post('/demo-register', async (req, res) => {
+  // check promo code
+  const premId = await remIdModel.findOne({remTittle : 'RemTable'});
+  if (premId.remPromo != req.body.promo) return res.status(400).send("Promo code mismatch"); 
+
   // check if mobile already exists
-  const mobileExist = await userModel.findOne({
-    mobile : req.body.mobile
-  });
+  const mobileExist = await userModel.findOneAndUpdate(
+    {mobile : req.body.mobile},
+    {
+      status : '1',
+      $addToSet: {lmsCourse: req.body.lmsCourse}
+    }
+  );
   if(mobileExist) return res.status(400).send("Mobile no. is already registered");
 
   // check if email is already registered
-  const emailExist = await userModel.findOne({
+  const emailExist = await userModel.findOneAndUpdate({
     email: req.body.email
+  },
+  {
+    status : '1',
+    $addToSet: {lmsCourse: req.body.lmsCourse}
   });
-  if(emailExist) return res.status(400).send("Email is already already registered");
+  if(emailExist) return res.status(400).send("Email is already registered");
+
+  // gen center
+  function centerGen(c_center){
+    let g_center;
+    
+    if(c_center === "Hazratganj"){
+      g_center = "HZ";
+    }
+    else if(c_center === "Aliganj"){
+      g_center = "AL";
+    }
+    else if(c_center === "Gomti Nagar"){
+      g_center = "GM";
+    }
+    else if(c_center === "Indira Nagar"){
+      g_center = "IN";
+    }
+    else if(c_center === "Alambagh"){
+      g_center = "AB";
+    }
+    else if(c_center === "Ansal"){
+      g_center = "AN";
+    }
+    
+    return g_center;
+  }
 
   // gen stream
   function streamGen(stream){
@@ -158,19 +196,20 @@ router.post('/demo-register', async (req, res) => {
   
 
   const user = new userModel({
-    userId: `GRHZ${req.body.class}21${streamGen(req.body.stream)}${srno}`,
+    userId: `GR${centerGen(req.body.center)}${req.body.class}23${streamGen(req.body.stream)}${srno}`,
     name: req.body.name,
+    father: req.body.father,
     mobile: req.body.mobile,
     email: req.body.email,
     class: req.body.class,
-    center: 'Hazratganj',
+    center: req.body.center,
     stream: req.body.stream,
-    lmsCourse: lmscourseGen(req.body.class, req.body.stream),
-    session: "2021-22",
-    school: "School",
-    address: "Address",
+    lmsCourse: [req.body.lmsCourse],
+    session: "2023-24",
+    school: req.body.school,
+    address: req.body.address,
     pass: genPass(),
-    status: "2",
+    status: "1",
     role: "student"
   });
 
@@ -2534,30 +2573,48 @@ router.post('/ampNeet/payuPayment/cancel/:userId', async (req, res) => {
 });
 
 
-/* router.get('/iciciBankPayment', async (req, res) => {
+router.get('/iciciBankPayment', async (req, res) => {
   try {
 
-    const aes = new aesEncrypt;
-    aes.setSecretKey('1162810211105034');
+    function encrypt(plainText, key, outputEncoding = "base64") {
+      const cipher = crypto.createCipheriv("aes-128-ecb", key, null);
+      return Buffer.concat([cipher.update(plainText), cipher.final()]).toString(outputEncoding);
+    }
+    
+    function decrypt(cipherText, key, outputEncoding = "utf8") {
+      const cipher = crypto.createDecipheriv("aes-128-ecb", key, null);
+      return Buffer.concat([cipher.update(cipherText), cipher.final()]).toString(outputEncoding);
+    }
 
-    var referenceNo = '';
-    var subMerchantId = '';
-    var pgAmount = '';
-    var mandatoryFields = '';
-    var mobileNo = '';
-    var amount = '';
-    var optionalFields = '';
-    var returnUrl = '';
-    var transactionAmount = '';
-    var paymode = '';
+    function getAES(value){
+      const key = "1162810211105034";
+      const encrypted = encrypt(value, key, "base64");
+      return encrypted;
+    }
 
-    res.redirect(`https://eazypay.icicibank.com/EazyPG?merchantid=365707&mandatory%20fields=jq86vXf8bAcYAoCkkpFIxA==&optional%20fields=&returnurl=7B4oT2UJD73PuvEEKf8BCdSkbMZGUZxLQk2YtAPxnNhfXmgfQFTVBgldy/f8onRf&Reference%20No=1mO3pIZviHX/mNxbrXBTgw==&submerchantid=+4DyREHuXPOnx4GWtsIwcw==&transaction%20amount=uvc99Yb/nzlcq3DqYdGnag==&paymode=jYluS+ctiCPrWTgGg37y3g==`);
+    // const aes = new aesEncrypt;
+
+    var referenceNo = '800101';
+    var subMerchantId = '1235';
+    var pgAmount = '100';
+    var mandatoryFields = `${referenceNo}|${subMerchantId}|${pgAmount}`;
+    var mobileNo = '7390808334';
+    var amount = 0;
+    var optionalFields = `${mobileNo}|${amount}`;
+    var returnUrl = 'https://gravitydigital.in/ampneet2023';
+    var transactionAmount = pgAmount;
+    var paymode = '9';
+
+    var paymentURL = `https://eazypay.icicibank.com/EazyPG?merchantid=365707&mandatory%20fields=${getAES(mandatoryFields)}&optional%20fields=&returnurl=${getAES(returnUrl)}&Reference%20No=${getAES(referenceNo)}&submerchantid=${getAES(subMerchantId)}&transaction%20amount=${getAES(transactionAmount)}&paymode=${getAES(paymode)}`;
+    // console.log(paymentURL);
+    // res.redirect(paymentURL);
+    res.status(200).send({encUrl : paymentURL});
 
   }
   catch (err) {
     res.status(400).send({message : "Something went wrong"});
   }
-}); */
+});
 
 
 /* ========== AMP 2023 CRASH COURSE END =========== */

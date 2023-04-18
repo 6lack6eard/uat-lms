@@ -12,6 +12,7 @@ const remIdSchema = mongoose.Schema({
     remAmpStudentId : Number,
     remAmpInstituteId : Number,
     remBatchId : Number,
+    remPromo : String,
 });
 
 const remIdModel = mongoose.model('RemId', remIdSchema);
