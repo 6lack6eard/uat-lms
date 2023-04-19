@@ -208,7 +208,7 @@ router.post('/demo-register', async (req, res) => {
     session: "2023-24",
     school: req.body.school,
     address: req.body.address,
-    pass: genPass(),
+    pass: "gravity000",
     status: "1",
     role: "student"
   });
@@ -216,7 +216,7 @@ router.post('/demo-register', async (req, res) => {
   // send sms to the no.
   fast2sms.sendMessage({
     authorization : process.env.FAST_2_SMS,
-    message : `Gravity LMS Login Details:-\nUserId : ${user.email}\nPassword : ${user.pass}\n`,
+    message : `Gravity LMS Login Details:-\nUserId : ${user.userId}\nPassword : ${user.pass}\n`,
     numbers : [user.mobile]
   });
 
