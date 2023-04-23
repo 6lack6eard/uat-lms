@@ -66,6 +66,130 @@ function lowerString(value){
 
 /* ========== STUDENT PART =========== */
 
+/* REGISTER new user via API */
+router.post('/api-register', async (req, res) => {
+  // check promo code
+  if (req.body.secret != "4528482B4D6250655368566D59713374") return res.status(400).send("Secret Key Mismatch"); 
+
+  // check if mobile already exists
+  const mobileExist = await userModel.findOne(
+    {mobile : req.body.mobile});
+  if(mobileExist) return res.status(400).send("Mobile no. is already registered");
+
+  // check if email is already registered
+  const emailExist = await userModel.findOne({
+    email: req.body.email
+  });
+  if(emailExist) return res.status(400).send("Email is already registered");
+
+  // gen center
+  function centerGen(c_center){
+    let g_center;
+    
+    if(c_center === "Hazratganj"){
+      g_center = "HZ";
+    }
+    else if(c_center === "Aliganj"){
+      g_center = "AL";
+    }
+    else if(c_center === "Gomti Nagar"){
+      g_center = "GM";
+    }
+    else if(c_center === "Indira Nagar"){
+      g_center = "IN";
+    }
+    else if(c_center === "Alambagh"){
+      g_center = "AB";
+    }
+    else if(c_center === "Ansal"){
+      g_center = "AN";
+    }
+    
+    return g_center;
+  }
+
+  // gen stream
+  function streamGen(stream){
+    let g_stream;
+    
+    if(stream === "JEE"){
+      g_stream = "JE";
+    }
+    else if(stream === "NEET"){
+      g_stream = "NT";
+    }
+    else if(stream === "COMMON"){
+      g_stream = "CO";
+    }
+
+    return g_stream;
+  }
+
+
+  // genrate pass
+  function genPass() {
+    var pass = "";
+    var str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' + 'abcdefghijklmnopqrstuvwxyz0123456789';
+  
+    for (i = 1; i <= 8; i++) {
+      var char = Math.floor(Math.random() * str.length + 1);
+      pass = pass + str.charAt(char);
+    }
+
+    return pass;
+  }
+
+  // incrementing student id
+  const remId = await remIdModel.findOne({remTittle : 'RemTable'});
+  const id = (remId.remStudentId + 1);
+  const remIdUpdate = await remIdModel.findOneAndUpdate(
+      {remTittle : 'RemTable'},
+      {remStudentId : id}
+  );
+  remIdUpdate.save();
+  // genrate srno
+  let srno = (remIdUpdate.remStudentId).toString().padStart(6, '0');
+  
+
+  const user = new userModel({
+    userId: `GR${centerGen(req.body.center)}${req.body.class}23${streamGen(req.body.stream)}${srno}`,
+    name: req.body.name,
+    father: req.body.father,
+    mobile: req.body.mobile,
+    email: req.body.email,
+    class: req.body.class,
+    center: req.body.center,
+    stream: req.body.stream,
+    session: "2023-24",
+    school: req.body.school,
+    address: req.body.address,
+    pass: "gravity000",
+    status: "1",
+    role: "student"
+  });
+
+  // send sms to the no.
+  fast2sms.sendMessage({
+    authorization : process.env.FAST_2_SMS,
+    message : `Gravity LMS Login Details:-\nUserId : ${user.userId}\nPassword : ${user.pass}\n`,
+    numbers : [user.mobile]
+  });
+
+  
+  user.save(function(err, userObj){
+    if(err){
+      res.send({status: 500, message: 'Unable to ADD user'});
+    }
+    else{
+      res.send({status: 200, message: 'You registered successfully', result: userObj});
+    }
+
+  });
+});
+
+
+
+
 /* REGISTER new demo user */
 router.post('/demo-register', async (req, res) => {
   // check promo code
@@ -1469,6 +1593,81 @@ router.post('/uploadAttendance', async (req, res) => {
     res.status(200).send({message : "ok"});
     
   } catch (err) {
+    res.status(400).send({message : "Something went wrong"});
+  }
+});
+
+
+/* DOCUMENT UPLOAD GENRAL */
+router.post('/notice', document.single('notice'), async (req, res) => {
+
+  try {
+    
+    // for verfiying that image exists in the request
+    function file(){
+      if (req.file) {
+        return req.file.filename;
+      } 
+    }
+    
+    const notice = new schoolDocumentModel({
+      type : "Gravity Notice",
+      title : req.body.title,
+      url : `${req.protocol}://${req.get("host")}/document/${file()}`
+    });
+    
+    notice.save(function (err) {
+      if(err){
+        res.status(400).send({message: 'Notice to add report'});
+      }
+      else{
+        res.status(200).send({message: 'Notice added successfully', result : notice});
+      }
+    });
+  } 
+  catch (err) {
+    res.status(400).send({message : "Something went wrong"});
+  }
+});
+
+
+/* REPORT UPLOAD SCHOOLWISE */
+router.post('/report', document.single('report'), async (req, res) => {
+
+  try {
+    
+    // for verfiying that image exists in the request
+    function file(){
+      if (req.file) {
+        return req.file.filename;
+      } 
+    }
+
+    const schoolExist = await userModel.findOne({
+      userId : req.body.schoolId
+    });
+
+    if (!schoolExist) return res.status(400).send(
+      {message : "School Id is wrong"}
+    );
+    
+    const report = new schoolDocumentModel({
+      schoolId : req.body.schoolId,
+      type : "Gravity Report",
+      title : req.body.title,
+      url : `${req.protocol}://${req.get("host")}/document/${file()}`
+    });
+    
+    report.save(function (err) {
+      if(err){
+        res.status(400).send({message: 'Unable to add report'});
+      }
+      else{
+        res.status(200).send({message: 'Report added successfully', result : report});
+      }
+    });
+  } 
+  catch (err) {
     res.status(400).send({message : "Something went wrong"});
   }
 });
