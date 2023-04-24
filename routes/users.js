@@ -2816,6 +2816,73 @@ router.get('/iciciBankPayment', async (req, res) => {
 });
 
 
+router.post('/ampHybridlearning/partner', async (req, res) => {
+  try {
+
+    // console.log(req.body);
+
+    // check if school already exist
+    const instituteExist = await ampInstituteModel.findOne({
+      $or : [
+        {email : req.body.email},
+        {mobile : req.body.contact}
+      ]
+    });
+    console.log(instituteExist);
+    if(instituteExist) return res.status(400).send({message : "Institute already exists with this Email/Mobile"});
+
+    // incrementing student id
+    const remId = await remIdModel.findOne({ remTittle: 'RemTable' });
+    const id = (remId.remAmpInstituteId + 1);
+    const remIdUpdate = await remIdModel.findOneAndUpdate(
+      { remTittle: 'RemTable' },
+      { remAmpInstituteId: id }
+    );
+    remIdUpdate.save();
+    // genrate srno
+    let srno = (remIdUpdate.remAmpInstituteId).toString().padStart(6, '0');
+
+    const ampInstitute = await new ampInstituteModel({
+      userId: `GRAMPIN${srno}`,
+      name: req.body.name,
+      email: req.body.email,
+      mobile: req.body.contact,
+      contactPersonName: req.body.contactPersonName,
+      contactPersonMobile: req.body.contactPersonMobile,
+      address: req.body.address,
+      city: req.body.city,
+      state: req.body.state,
+      pincode: req.body.pincode,
+      natureOfInstitute: req.body.natureOfInstitute,
+      infrastrucuture: req.body.infrastrucuture,
+      board: req.body.board,
+      paymentStatus: false
+    });
+
+    console.log(ampInstitute);
+
+    ampInstitute.save(async function (err) {
+      if (err) {
+        res.status(400).send({message: 'Registration failed' });
+      }
+      else {
+
+        fast2sms.sendMessage({
+          authorization: process.env.FAST_2_SMS,
+          message: `Dear ${ampInstitute.name},\nYou have successfully registered for NEET CRASH COURSE - Gravity Classes`,
+          numbers: [ampInstitute.mobile]
+        });
+
+        res.status(200).send({ message: 'Registration successful' });
+      }
+    });
+
+  } catch (err) {
+    res.status(400).send({ message: "Something went wrong" });
+  }
+});
+
+
 /* ========== AMP 2023 CRASH COURSE END =========== */
 
 
