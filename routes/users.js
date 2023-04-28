@@ -2772,54 +2772,8 @@ router.post('/ampNeet/payuPayment/cancel/:userId', async (req, res) => {
 });
 
 
-router.get('/iciciBankPayment', async (req, res) => {
-  try {
-
-    function encrypt(plainText, key, outputEncoding = "base64") {
-      const cipher = crypto.createCipheriv("aes-128-ecb", key, null);
-      return Buffer.concat([cipher.update(plainText), cipher.final()]).toString(outputEncoding);
-    }
-    
-    function decrypt(cipherText, key, outputEncoding = "utf8") {
-      const cipher = crypto.createDecipheriv("aes-128-ecb", key, null);
-      return Buffer.concat([cipher.update(cipherText), cipher.final()]).toString(outputEncoding);
-    }
-
-    function getAES(value){
-      const key = "1162810211105034";
-      const encrypted = encrypt(value, key, "base64");
-      return encrypted;
-    }
-
-    // const aes = new aesEncrypt;
-
-    var referenceNo = '800101';
-    var subMerchantId = '1235';
-    var pgAmount = '100';
-    var mandatoryFields = `${referenceNo}|${subMerchantId}|${pgAmount}`;
-    var mobileNo = '7390808334';
-    var amount = 0;
-    var optionalFields = `${mobileNo}|${amount}`;
-    var returnUrl = 'https://gravitydigital.in/ampneet2023';
-    var transactionAmount = pgAmount;
-    var paymode = '9';
-
-    var paymentURL = `https://eazypay.icicibank.com/EazyPG?merchantid=365707&mandatory%20fields=${getAES(mandatoryFields)}&optional%20fields=&returnurl=${getAES(returnUrl)}&Reference%20No=${getAES(referenceNo)}&submerchantid=${getAES(subMerchantId)}&transaction%20amount=${getAES(transactionAmount)}&paymode=${getAES(paymode)}`;
-    // console.log(paymentURL);
-    // res.redirect(paymentURL);
-    res.status(200).send({encUrl : paymentURL});
-
-  }
-  catch (err) {
-    res.status(400).send({message : "Something went wrong"});
-  }
-});
-
-
 router.post('/ampHybridlearning/partner', async (req, res) => {
   try {
-
-    // console.log(req.body);
 
     // check if school already exist
     const instituteExist = await ampInstituteModel.findOne({
@@ -2828,7 +2782,6 @@ router.post('/ampHybridlearning/partner', async (req, res) => {
         {mobile : req.body.contact}
       ]
     });
-    console.log(instituteExist);
     if(instituteExist) return res.status(400).send({message : "Institute already exists with this Email/Mobile"});
 
     // incrementing student id
@@ -2841,6 +2794,19 @@ router.post('/ampHybridlearning/partner', async (req, res) => {
     remIdUpdate.save();
     // genrate srno
     let srno = (remIdUpdate.remAmpInstituteId).toString().padStart(6, '0');
+
+    // gen password
+    function genPass() {
+      var pass = "";
+      var str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' + 'abcdefghijklmnopqrstuvwxyz0123456789';
+    
+      for (i = 1; i <= 8; i++) {
+        var char = Math.floor(Math.random() * str.length + 1);
+        pass = pass + str.charAt(char);
+      }
+
+      return pass;
+    }
 
     const ampInstitute = await new ampInstituteModel({
       userId: `GRAMPIN${srno}`,
@@ -2859,8 +2825,6 @@ router.post('/ampHybridlearning/partner', async (req, res) => {
       paymentStatus: false
     });
 
-    console.log(ampInstitute);
-
     ampInstitute.save(async function (err) {
       if (err) {
         res.status(400).send({message: 'Registration failed' });
@@ -2869,7 +2833,7 @@ router.post('/ampHybridlearning/partner', async (req, res) => {
 
         fast2sms.sendMessage({
           authorization: process.env.FAST_2_SMS,
-          message: `Dear ${ampInstitute.name},\nYou have successfully registered for NEET CRASH COURSE - Gravity Classes`,
+          message: `Registered for AMP Hybrid Learning \nUserId: ${ampInstitute.userId}`,
           numbers: [ampInstitute.mobile]
         });
 
@@ -2881,6 +2845,96 @@ router.post('/ampHybridlearning/partner', async (req, res) => {
     res.status(400).send({ message: "Something went wrong" });
   }
 });
+
+
+router.post('/ampHybridlearning/payment', async (req, res) => {
+  try {
+
+    function encrypt(plainText, key, outputEncoding = "base64") {
+      const cipher = crypto.createCipheriv("aes-128-ecb", key, null);
+      return Buffer.concat([cipher.update(plainText), cipher.final()]).toString(outputEncoding);
+    }
+    
+    function decrypt(cipherText, key, outputEncoding = "utf8") {
+      const cipher = crypto.createDecipheriv("aes-128-ecb", key, null);
+      return Buffer.concat([cipher.update(cipherText), cipher.final()]).toString(outputEncoding);
+    }
+
+    function getAES(value){
+      const key = "1162810211105034";
+      const encrypted = encrypt(value, key, "base64");
+      return encrypted;
+    }
+
+
+    // check if school exist
+    const institute = await ampInstituteModel.findOne({        
+      userId : req.body.userId,
+      mobile : req.body.mobile
+    });
+    if(!institute) return res.status(400).send({message : "Please Enter Correct Details."});
+
+    var referenceNo = `TxnId${Number(new Date)}`;
+    var subMerchantId = '1235';
+    var pgAmount = '100';
+    var mandatoryFields = `${referenceNo}|${subMerchantId}|${pgAmount}`;
+    var mobileNo = institute.mobile;
+    var amount = 0;
+    var optionalFields = `${mobileNo}|${amount}`;
+    var returnUrl = `https://gravitydigital.in/users/iciciBankPayment/response/${institute.userId}`;
+    var transactionAmount = pgAmount;
+    var paymode = '9';
+
+    var plainURL = `https://eazypay.icicibank.com/EazyPG?merchantid=365707&mandatory%20fields=${mandatoryFields}&optional%20fields=&returnurl=${returnUrl}&Reference%20No=${referenceNo}&submerchantid=${subMerchantId}&transaction%20amount=${transactionAmount}&paymode=${paymode}`;
+
+    var paymentURL = `https://eazypay.icicibank.com/EazyPG?merchantid=365707&mandatory%20fields=${getAES(mandatoryFields)}&optional%20fields=&returnurl=${getAES(returnUrl)}&Reference%20No=${getAES(referenceNo)}&submerchantid=${getAES(subMerchantId)}&transaction%20amount=${getAES(transactionAmount)}&paymode=${getAES(paymode)}`;
+
+    const paymentLog = new ampPaymentLogModel({
+      userId: institute.userId,
+      clientSecret: referenceNo,
+      log: `{"plainURL" : "${plainURL}", "paymentURL" : "${paymentURL}", "req" : "${JSON.stringify(req.body)}"}`
+    });
+
+    paymentLog.save();
+    
+    res.status(200).send({encUrl : paymentURL});
+
+  }
+  catch (err) {
+    res.status(400).send({message : "Something went wrong"});
+  }
+});
+
+
+router.post('/iciciBankPayment/response/:userId', async (req, res) => {
+  try {
+
+    const paymentLog = new ampPaymentLogModel({
+      userId: req.params.userId,
+      log: `{"req" : "${JSON.stringify(req.body)}"}`
+    });
+
+    paymentLog.save(async function (err) {
+      if (err) {
+        res.status(400).send({message: 'Payment Response failed' });
+      }
+      else {
+
+        fast2sms.sendMessage({
+          authorization: process.env.FAST_2_SMS,
+          message: `Payment \nUserId: ${ampInstitute.userId}`,
+          numbers: "7390808334"
+        });
+
+        res.status(200).send({ message: 'Payment Response successful' });
+      }
+    });
+    
+  } 
+  catch (err) {
+    res.status(400).send({"message" : "Something went wrong"});
+  }
+})
 
 
 /* ========== AMP 2023 CRASH COURSE END =========== */
