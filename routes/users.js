@@ -2914,19 +2914,19 @@ router.post('/iciciBankPayment/response/:userId', async (req, res) => {
       log: `{"req" : "${JSON.stringify(req.body)}"}`
     });
 
-    paymentLog.save(async function (err) {
+    paymentLog.save(function (err) {
       if (err) {
-        res.status(400).send({message: 'Payment Response failed' });
+        res.status(400).send({"message": "Payment Response failed" });
       }
       else {
 
         fast2sms.sendMessage({
           authorization: process.env.FAST_2_SMS,
-          message: `Payment \nUserId: ${ampInstitute.userId}`,
-          numbers: "7390808334"
+          message: `Payment \nUserId: ${req.params.userId}`,
+          numbers: ["7390808334"]
         });
 
-        res.status(200).send({ message: 'Payment Response successful' });
+        res.status(200).send({ "message": "Payment Response successful" });
       }
     });
     
