@@ -1921,7 +1921,7 @@ router.get('/get-amp-student-list', async (req, res) => {
 router.get('/get-amp-institute-list', async (req, res) => {
   try {
 
-    const ampInstituteList = await ampInstituteModel.find();
+    const ampInstituteList = await ampInstituteHybridModel.find();
     var content = "UserId,Name,Email,Mobile,Contact Person's Name,Contact Person's Mobile,Address,City,State,Pincode,Nature Of Institute,Infrastructure,Board,Payment Status\n";
     
     for (let i = 0; i < ampInstituteList.length; i++) {      
@@ -2700,7 +2700,7 @@ router.post('/ampNeet/payuPayment/success/:userId', async (req, res) => {
       // send sms to the no.
       fast2sms.sendMessage({
         authorization : process.env.FAST_2_SMS,
-        message : `Dear ${ampUser.name},\nYour payment successfully received - Gravity Classes`,
+        message : `Your payment successfully received - Gravity`,
         numbers : [ampUser.mobile]
       });
 
