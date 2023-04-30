@@ -27,6 +27,7 @@ const schoolDocumentModel = require('../models/schoolDocument.model');
 const dateTypeModel = require('../models/dateType.model');
 const ampStudentModel = require('../models/ampStudent.model');
 const ampInstituteModel = require('../models/ampInstitute.model');
+const ampInstituteHybridModel = require('../models/ampInstituteHybrid.model');
 const ampPaymentLogModel = require('../models/ampPaymentLog.model');
 
 
@@ -2668,7 +2669,6 @@ router.get('/ampNeet/success/:userId', async (req, res) => {
 
 
 router.post('/ampNeet/payuPayment/success/:userId', async (req, res) => { 
-  // console.log(req.body);
 
   try {
 
@@ -2689,7 +2689,7 @@ router.post('/ampNeet/payuPayment/success/:userId', async (req, res) => {
         });
       }
       else{
-        ampUser = await ampInstituteModel.findOne({
+        ampUser = await ampInstituteHybridModel.findOne({
           userId : req.params.userId
         });
       }      
@@ -2700,7 +2700,7 @@ router.post('/ampNeet/payuPayment/success/:userId', async (req, res) => {
       // send sms to the no.
       fast2sms.sendMessage({
         authorization : process.env.FAST_2_SMS,
-        message : `Dear ${ampUser.name},\nYour payment of Rs.500/- is successfully received for NEET CRASH COURSE - Gravity Classes`,
+        message : `Dear ${ampUser.name},\nYour payment successfully received - Gravity Classes`,
         numbers : [ampUser.mobile]
       });
 
@@ -2776,7 +2776,7 @@ router.post('/ampHybridlearning/partner', async (req, res) => {
   try {
 
     // check if school already exist
-    const instituteExist = await ampInstituteModel.findOne({
+    const instituteExist = await ampInstituteHybridModel.findOne({
       $or : [
         {email : req.body.email},
         {mobile : req.body.contact}
@@ -2786,14 +2786,14 @@ router.post('/ampHybridlearning/partner', async (req, res) => {
 
     // incrementing student id
     const remId = await remIdModel.findOne({ remTittle: 'RemTable' });
-    const id = (remId.remAmpInstituteId + 1);
+    const id = (remId.remAmpInstituteHybridId + 1);
     const remIdUpdate = await remIdModel.findOneAndUpdate(
       { remTittle: 'RemTable' },
-      { remAmpInstituteId: id }
+      { remAmpInstituteHybridId: id }
     );
     remIdUpdate.save();
     // genrate srno
-    let srno = (remIdUpdate.remAmpInstituteId).toString().padStart(6, '0');
+    let srno = (remIdUpdate.remAmpInstituteHybridId).toString().padStart(5, '0');
 
     // gen password
     function genPass() {
@@ -2808,8 +2808,8 @@ router.post('/ampHybridlearning/partner', async (req, res) => {
       return pass;
     }
 
-    const ampInstitute = await new ampInstituteModel({
-      userId: `GRAMPIN${srno}`,
+    const ampInstitute = await new ampInstituteHybridModel({
+      userId: `GRAMPINHY${srno}`,
       name: req.body.name,
       email: req.body.email,
       mobile: req.body.contact,
@@ -2847,6 +2847,7 @@ router.post('/ampHybridlearning/partner', async (req, res) => {
 });
 
 
+/* // Icici Payment
 router.post('/ampHybridlearning/payment', async (req, res) => {
   try {
 
@@ -2903,6 +2904,58 @@ router.post('/ampHybridlearning/payment', async (req, res) => {
   catch (err) {
     res.status(400).send({message : "Something went wrong"});
   }
+}); */
+
+
+router.post('/ampHybridlearning/payment', async (req, res) => {
+  try {
+
+    // check if school exist
+    const ampInstitute = await ampInstituteHybridModel.findOne({        
+      userId : req.body.userId,
+      mobile : req.body.mobile
+    });
+    if(!ampInstitute) return res.status(400).send({message : "Please Enter Correct Details."});
+
+    if(ampInstitute.paymentStatus) return res.status(400).send({message : "Payment already recived for this account"});
+
+    
+    const payDetails = {
+      txnId:  `TxnId${Number(new Date)}`,
+      plan_name : "100000 INR",
+      first_name: ampInstitute.name,
+      email: ampInstitute.email,
+      mobile: ampInstitute.mobile,
+      service_provide: 'test',
+      amount: 1,
+      call_back_url : `${process.env.BASE_URL}/users/ampNeet/payuPayment/success/${ampInstitute.userId}`,
+      payu_merchant_key : process.env.PAYU_MERCHANT_KEY,
+      payu_merchant_salt_version_1 : process.env.PAYU_MERCHANT_SALT_V1,
+      payu_merchant_salt_version_2 : process.env.PAYU_MERCHANT_SALT_V2,
+      payu_url : process.env.PAYU_URL,
+      payu_fail_url : `${process.env.BASE_URL}/users/ampNeet/payuPayment/cancel/${ampInstitute.userId}`,
+      payu_cancel_url : `${process.env.BASE_URL}/users/ampNeet/payuPayment/cancel/${ampInstitute.userId}`,
+      hashString : '',
+      payu_sha_token : ''
+    };
+    
+    payDetails.hashString = `${process.env.PAYU_MERCHANT_KEY}|${payDetails.txnId}|${parseInt(payDetails.amount)}|${payDetails.plan_name}|${payDetails.first_name}|${payDetails.email}|||||||||||${process.env.PAYU_MERCHANT_SALT_V1}`;
+    payDetails.payu_sha_token = crypto.createHash('sha512').update(payDetails.hashString).digest('hex');
+
+    // console.log(session);
+    const paymentLog = new ampPaymentLogModel({
+      userId: ampInstitute.userId,
+      clientSecret: payDetails.txnId,
+      log: JSON.stringify(payDetails)
+    });
+
+    paymentLog.save();
+    
+    res.status(200).send({info : payDetails});
+    
+  } catch (err) {
+    res.status(400).send({message : "Something went wrong"});
+  }
 });
 
 
@@ -2934,7 +2987,7 @@ router.post('/iciciBankPayment/response/:userId', async (req, res) => {
   catch (err) {
     res.status(400).send({"message" : "Something went wrong"});
   }
-})
+});
 
 
 /* ========== AMP 2023 CRASH COURSE END =========== */

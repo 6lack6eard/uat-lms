@@ -11,6 +11,7 @@ const remIdSchema = mongoose.Schema({
     remCrashCourseId : Number,
     remAmpStudentId : Number,
     remAmpInstituteId : Number,
+    remAmpInstituteHybridId : Number,
     remBatchId : Number,
     remPromo : String,
 });
