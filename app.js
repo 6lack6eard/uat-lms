@@ -25,6 +25,7 @@ var moduleCoursesRouter = require('./routes/moduleCourses');
 var crashCoursesRouter = require('./routes/crashCourses'); 
 var schoolRouter = require('./routes/school');
 var attendanceRouter = require('./routes/attendance');
+var batchRouter = require('./routes/batch');
   
 var app = express();
 
@@ -49,6 +50,7 @@ app.use('/moduleCourses', moduleCoursesRouter);
 app.use('/crashCourses', crashCoursesRouter);
 app.use('/schools', schoolRouter);
 app.use('/attendance', attendanceRouter);
+app.use('/batch', batchRouter);
 app.use((req, res, next) => {
   res.sendFile(path.join(__dirname, "angular", "index.html"));
 });

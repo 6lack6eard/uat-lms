@@ -29,6 +29,7 @@ const ampStudentModel = require('../models/ampStudent.model');
 const ampInstituteModel = require('../models/ampInstitute.model');
 const ampInstituteHybridModel = require('../models/ampInstituteHybrid.model');
 const ampPaymentLogModel = require('../models/ampPaymentLog.model');
+const batchMstModel = require('../models/batchMst.model');
 
 
 // Document Storage
@@ -187,8 +188,6 @@ router.post('/api-register', async (req, res) => {
 
   });
 });
-
-
 
 
 /* REGISTER new demo user */
@@ -875,80 +874,6 @@ router.post('/register-code', async (req, res) => {
 });
 
 
-
-
-
-
-
-
-
-/* 
-router.post('/payment', (req, res) => {
-  //Here pass txnid and it should be different on every call
-  req.body.txnid = `TxnId${Number(new Date)}`;
-  req.body.email = "abc@gmail.com";
-  req.body.firstname = "abc";
-  req.body.amount = 1.00;
-  req.body.productinfo = "123abc";
-  // req.body.service_provider = "payu_paisa";
-  //Here save all the details in pay object 
-  const pay = req.body;
-  const hashString = process.env.PAYU_MERCHANT_KEY //merchant key store in in different file
-    + '|' + pay.txnid
-    + '|' + pay.amount
-    + '|' + pay.productinfo
-    + '|' + pay.firstname
-    + '|' + pay.email
-    + '|' + '||||||||||'
-    + process.env.PAYU_MERCHANT_SALT_V1; //merchant salt store in in different file
-  
-  
-  const sha = new jsSHA('SHA-512', "TEXT");
-  sha.update(hashString);
-  //Getting hashed value from sha module
-  const hash = sha.getHash("HEX");
-
-  
-  //We have to additionally pass merchant key to API
-  //  so remember to include it.
-  pay.key = process.env.PAYU_MERCHANT_KEY; //store in in different file;
-  pay.surl = '/payment/success';
-  pay.furl = '/payment/fail';
-  pay.hash = hash;
-  
-  //Making an HTTP/HTTPS call with request
-  request.post({
-    headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json'
-    },
-    url: 'https://sandboxsecure.payu.in/_payment', //Testing url
-    form: pay
-  }, function (error, httpRes, body) {
-    if (error) res.send({status: false, message: error.toString()});
-
-    if (httpRes.statusCode === 200) {
-      res.send(body);
-    } 
-    else if (httpRes.statusCode >= 300 && httpRes.statusCode <= 400) {
-      res.redirect(httpRes.headers.location.toString());
-    }
-  })
-});
-
-router.post('/payment/success', async (req, res) => {
-  console.log(body);
-});
-
-router.post('/payment/fail', async (req, res) => {
-  console.log(body);
-}); */
-
-
-
-
-
-
 // git repo
 router.get('/payment', async (req, res) => { 
 
@@ -995,9 +920,6 @@ router.post('/payment/success', async (req, res) => {
 });
 
 
-
-
-
 router.post('/ampPayment', async function (req, res) {
 
   const session = await stripe.checkout.sessions.create({
@@ -1023,10 +945,6 @@ router.post('/ampPayment', async function (req, res) {
   res.status(200).send({paymentUrl : session.url});
 
 });
-
-
-
-
 
 
 
@@ -1562,7 +1480,7 @@ router.put('/assignBatch', async (req, res)=>{
 });
 
 
-/* REMOVE LMS COURSE */
+/* REMOVE LMS BATCH */
 router.put('/removeBatch', async (req, res) => {
   try {
     const user = await userModel.findOneAndUpdate(
@@ -1632,7 +1550,7 @@ router.post('/notice', document.single('notice'), async (req, res) => {
 });
 
 
-/* REPORT UPLOAD SCHOOLWISE */
+/* REPORT UPLOAD BATCHWISE */
 router.post('/report', document.single('report'), async (req, res) => {
 
   try {
@@ -1643,17 +1561,9 @@ router.post('/report', document.single('report'), async (req, res) => {
         return req.file.filename;
       } 
     }
-
-    const schoolExist = await userModel.findOne({
-      userId : req.body.schoolId
-    });
-
-    if (!schoolExist) return res.status(400).send(
-      {message : "School Id is wrong"}
-    );
     
     const report = new schoolDocumentModel({
-      schoolId : req.body.schoolId,
+      schoolId : req.body.batch,
       type : "Gravity Report",
       title : req.body.title,
       url : `${req.protocol}://${req.get("host")}/document/${file()}`
@@ -2395,7 +2305,9 @@ router.post('/ampRegisterInstitute', async (req, res) => {
   } catch (err) {
     res.status(400).send({message : "Something went wrong"});
   }
-}); */
+}); 
+
+*/
 
 
 router.post('/ampRegisterStudent', async (req, res) => {
@@ -2959,7 +2871,7 @@ router.post('/ampHybridlearning/payment', async (req, res) => {
 });
 
 
-router.post('/iciciBankPayment/response/:userId', async (req, res) => {
+router.post('/iciciBankPayment/response/:userId', async (req, res) => { 
   try {
 
     const paymentLog = new ampPaymentLogModel({
@@ -2969,7 +2881,7 @@ router.post('/iciciBankPayment/response/:userId', async (req, res) => {
 
     paymentLog.save(function (err) {
       if (err) {
-        res.status(400).send({"message": "Payment Response failed" });
+        res.status(400).send({message: "Payment Response failed" });
       }
       else {
 
@@ -2979,13 +2891,13 @@ router.post('/iciciBankPayment/response/:userId', async (req, res) => {
           numbers: ["7390808334"]
         });
 
-        res.status(200).send({ "message": "Payment Response successful" });
+        res.status(200).send({ message: "Payment Response successful" });
       }
     });
     
   } 
   catch (err) {
-    res.status(400).send({"message" : "Something went wrong"});
+    res.status(400).send({message : "Something went wrong"});
   }
 });
 
