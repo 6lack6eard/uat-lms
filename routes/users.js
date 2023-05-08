@@ -30,6 +30,7 @@ const ampInstituteModel = require('../models/ampInstitute.model');
 const ampInstituteHybridModel = require('../models/ampInstituteHybrid.model');
 const ampPaymentLogModel = require('../models/ampPaymentLog.model');
 const batchMstModel = require('../models/batchMst.model');
+const neetUsersModel = require('../models/neetUsers.model');
 
 
 // Document Storage
@@ -51,6 +52,30 @@ const storage = multer.diskStorage({
 });
 const document = multer({
   storage: storage,
+  limits: 20000000
+});
+
+
+// image Storage
+const imageStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    if (!file) {
+      return null;
+    } else {
+      return cb(null, "./document")
+    }
+  },
+  filename: (req, file, cb) => {
+    if (!file) {
+      return null;
+    } else {
+      console.log(file);
+      return cb(null, `${file.originalname}_${file.fieldname}_${Date.now()}.jpg`);
+    }
+  }
+});
+const imageUpload = multer({
+  storage: imageStorage,
   limits: 20000000
 });
 
@@ -178,6 +203,41 @@ router.post('/api-register', async (req, res) => {
   });
 
   
+  user.save(function(err, userObj){
+    if(err){
+      res.send({status: 500, message: 'Unable to ADD user'});
+    }
+    else{
+      res.send({status: 200, message: 'You registered successfully', result: userObj});
+    }
+
+  });
+});
+
+
+/* register neet student */
+router.post('/neet-student-register', imageUpload.single('admitcard'), async (req, res) => {
+
+  // for verfiying that image exists in the request
+  function file(){
+    if (req.file) {
+      return req.file.filename;
+    } 
+  }
+
+  const user = new neetUsersModel({
+    name: req.body.name,
+    father: req.body.father,
+    mother: req.body.mother,
+    dob: req.body.dob,
+    enroll: req.body.enroll,
+    mobile: req.body.mobile,
+    email: req.body.email,
+    roll: req.body.roll,
+    admitCardImg: `${req.protocol}://${req.get("host")}/document/${file()}`,
+    exam: "NEET-2023"
+  });
+
   user.save(function(err, userObj){
     if(err){
       res.send({status: 500, message: 'Unable to ADD user'});
