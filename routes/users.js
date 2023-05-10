@@ -2899,7 +2899,7 @@ router.post('/ampHybridlearning/payment', async (req, res) => {
       email: ampInstitute.email,
       mobile: ampInstitute.mobile,
       service_provide: 'test',
-      amount: 1,
+      amount: 100000,
       call_back_url : `${process.env.BASE_URL}/users/ampNeet/payuPayment/success/${ampInstitute.userId}`,
       payu_merchant_key : process.env.PAYU_MERCHANT_KEY,
       payu_merchant_salt_version_1 : process.env.PAYU_MERCHANT_SALT_V1,
