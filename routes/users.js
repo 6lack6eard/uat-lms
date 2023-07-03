@@ -2957,7 +2957,7 @@ router.post('/iciciBankPayment/response/:userId', async (req, res) => {
     
   } 
   catch (err) {
-    res.status(400).send({message : " went wrong"});
+    res.status(400).send({message : "Something went wrong"});
   }
 });
 
