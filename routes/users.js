@@ -2967,8 +2967,4 @@ router.post('/iciciBankPayment/response/:userId', async (req, res) => {
 
 
 
-/* some changes here for testing */
-
-
-
 module.exports = router;
