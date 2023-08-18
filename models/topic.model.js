@@ -6,7 +6,8 @@ const topicSchema = mongoose.Schema({
     topicId : String,
     topicName : String,
     videoList : [String],
-    documentList : [String]
+    documentList : [String],
+    questionList : [String]
 });
 
 const topicModel = mongoose.model('Topics', topicSchema);

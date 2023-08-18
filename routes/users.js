@@ -31,6 +31,8 @@ const ampInstituteHybridModel = require('../models/ampInstituteHybrid.model');
 const ampPaymentLogModel = require('../models/ampPaymentLog.model');
 const batchMstModel = require('../models/batchMst.model');
 const neetUsersModel = require('../models/neetUsers.model');
+const userTopicsModel = require('../models/userTopic.model');
+const topicQuestionModel = require('../models/topicQuestion.model');
 
 
 // Document Storage
@@ -669,10 +671,58 @@ router.get('/get-lms-course-topic/:studentId/:courseId/:subjectId', verify, asyn
           courseId : req.params.courseId, 
           subjectId : req.params.subjectId
         }, 
-        function(err, topicList){
+        async function(err, topicList){
           if (err) {
             res.send({status: 500, message: 'Some error occured'})
           } else {
+            
+            for (let i = 0; i < topicList.length; i++) {
+              const userTopicExist = await userTopicsModel.findOne({
+                userId : user.userId,
+                topicId : topicList[i].topicId
+              });
+
+              if(userTopicExist){
+                newTopic = JSON.parse(JSON.stringify(topicList[i]));
+                newTopic.videoDetail = userTopicExist;
+                
+                topicList[i] = newTopic;
+              }
+              else{
+                const userTopic = new userTopicsModel({
+                  userId : user.userId,
+                  topicId : topicList[i].topicId,
+                  latestVideoCount : 1,
+                  testAttempt : false
+                });
+
+                userTopic.save(function(err, userTopic){
+                  if(userTopic){
+                    newTopic = JSON.parse(JSON.stringify(topicList[i]));
+                    newTopic.videoDetail = userTopic;
+                    
+                    topicList[i] = newTopic;
+                  }
+                });
+              }
+
+              newTopic = JSON.parse(JSON.stringify(topicList[i]));
+              const topicQuestionDetails = [];
+              
+              for (let j = 0; j < (newTopic.questionList).length; j++) {
+                // console.log(newTopic.questionList[j]);
+
+                const topicQuestion = await topicQuestionModel.findOne({topicQuestionId : newTopic.questionList[j]});
+
+                // console.log(topicQuestion);
+                topicQuestionDetails[j] = topicQuestion;
+              }
+
+              newTopic.topicQuestionDetails = topicQuestionDetails;
+              // console.log(newTopic);
+              topicList[i] = newTopic;
+            }
+
             res.send({status: 200, result: topicList})
           }
         }
@@ -685,6 +735,100 @@ router.get('/get-lms-course-topic/:studentId/:courseId/:subjectId', verify, asyn
   catch(err){
     res.send(err);
   }  
+});
+
+
+/* Get user topic details and update last played video */
+router.post('/update-user-topic-video-count/:studentId', verify, async (req, res) => { 
+  try {
+
+    const user = await userModel.findById(req.params.studentId);
+
+    /* const userTopic = await userTopicsModel.findOneAndUpdate({
+      userId : user.userId,
+      topicId : req.body.topicId
+    },
+    {
+      latestVideoCount : String(Number(req.body.latestVideoCount) + 1)
+    }); */
+    const userTopic = await userTopicsModel.findOne({
+      userId : user.userId,
+      topicId : req.body.topicId
+    });
+
+    if(req.body.latestVideoCount >= userTopic.latestVideoCount){
+      userTopic.latestVideoCount = String(Number(req.body.latestVideoCount) + 1);
+    }
+
+    userTopic.save(function(err){
+      if(err){
+        res.status(400).send({message : "Failed to update user topic status"});
+      }
+      else{
+        res.status(200).send({message : "updated successfully"});
+      }
+    })
+    
+  } catch (err) {
+    res.status(400).send({message: "Something went wrong"});
+  }
+});
+
+
+/* get perticular topic detail for quiz */
+router.get('/get-lms-course-topic-quiz/:studentId/:topicId', verify, async (req, res) => {
+  try {
+
+    let topic = await topicModel.findOne({
+      topicId : req.params.topicId
+    });
+
+    // console.log(topic);
+    // res.send(200);
+    topic = JSON.parse(JSON.stringify(topic));
+    let topicQuestionDetails = [];
+
+    for (let j = 0; j < (topic.questionList).length; j++) {
+
+      const topicQuestion = await topicQuestionModel.findOne({topicQuestionId : topic.questionList[j]});
+
+      // console.log(topicQuestion);
+      topicQuestionDetails[j] = topicQuestion;
+    }
+
+    topic.topicQuestionDetails = topicQuestionDetails;
+
+    // console.log(topic);
+    res.status(200).send({result : topic})
+    
+  } catch (err) {
+    res.status(400).send({message : "Something went wrong"});
+  }
+});
+
+
+/* test attempted */
+router.post('/update-lms-course-topic-test-attempted/:studentId', verify, async(req, res) => {
+  try {
+
+    const user = await userModel.findById(req.params.studentId);
+    const topic = await userTopicsModel.findOneAndUpdate(
+      {
+        topicId : req.body.topicId,
+        userId : user.userId
+      },
+      {
+        testAttempt : true
+      }
+    );
+
+    console.log(topic);
+
+    res.status(200).send({message : "Test attempted successfully"});
+    
+  } catch (err) {
+    res.status(400).send({message : "Something went wrong"});
+  }
 });
 
 
