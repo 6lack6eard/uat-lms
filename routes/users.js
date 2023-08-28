@@ -15,6 +15,7 @@ const Stripe = require('stripe');
 const stripe = Stripe(process.env.STRIP_SECRET_KEY);
 
 const userModel = require('../models/users.model');
+const userRegisterModel = require('../models/usersRegister.model');
 const remIdModel = require('../models/remId.model');
 const lmsCourseModel = require('../models/lmsCourse.model');
 const crashCourseModel = require('../models/crashCourse.model');
@@ -253,7 +254,7 @@ router.post('/neet-student-register', imageUpload.single('admitcard'), async (re
 
 
 /* REGISTER new demo user */
-router.post('/demo-register', async (req, res) => {
+/* router.post('/demo-register', async (req, res) => {
   // check promo code
   const premId = await remIdModel.findOne({remTittle : 'RemTable'});
   if (premId.remPromo != req.body.promo) return res.status(400).send("Promo code mismatch"); 
@@ -436,6 +437,30 @@ router.post('/demo-register', async (req, res) => {
     subject: "Gravity LMS Registration", // Subject line
     html: content, // html body
   }); */
+
+  /* user.save(function(err, userObj){
+    if(err){
+      res.send({status: 500, message: 'Unable to ADD user'});
+    }
+    else{
+      res.send({status: 200, message: 'You registered successfully', result: userObj});
+    }
+
+  });
+}); */
+
+
+/* REGISTER new demo user */
+router.post('/demo-register', async (req, res) => { 
+
+  const user = new userRegisterModel(req.body);
+
+  // send sms to the no.
+  fast2sms.sendMessage({
+    authorization : process.env.FAST_2_SMS,
+    message : `Gravity LMS Registration completed successfully`,
+    numbers : [user.mobile]
+  });
 
   user.save(function(err, userObj){
     if(err){
@@ -1446,6 +1471,20 @@ router.put('/filterStudentByCourse', async (req, res) => {
 
   } catch (err) {
     res.status(500).send(err);
+  }
+});
+
+
+/* GET REGISTERED USERS */
+router.get('/get-registered-user', async (req, res) => {
+  try {
+
+    userList = await userRegisterModel.find();
+
+    res.status(200).send({result : userList});
+    
+  } catch (err) {
+    res.status(400).send({message : "Something went wrong"});
   }
 });
 
