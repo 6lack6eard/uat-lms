@@ -27,7 +27,8 @@ const userRegisterSchema = mongoose.Schema({
     perPCB: String,
     gradeScience: String,
     gradeMaths: String,
-    examBoard: String
+    examBoard: String,
+    image: String
 
 });
 

@@ -72,7 +72,6 @@ const imageStorage = multer.diskStorage({
     if (!file) {
       return null;
     } else {
-      console.log(file);
       return cb(null, `${file.originalname}_${file.fieldname}_${Date.now()}.jpg`);
     }
   }
@@ -451,9 +450,46 @@ router.post('/neet-student-register', imageUpload.single('admitcard'), async (re
 
 
 /* REGISTER new demo user */
-router.post('/demo-register', async (req, res) => { 
+router.post('/demo-register', imageUpload.single('image'), async (req, res) => { 
 
-  const user = new userRegisterModel(req.body);
+  function file(){
+    if (req.file) {
+      return req.file.filename;
+    } 
+  }
+
+  // const user = new userRegisterModel(req.body);
+  const user = new userRegisterModel({
+    stream : req.body.stream,
+    course : req.body.course,
+    name : req.body.name,
+    father : req.body.father,
+    mother : req.body.mother,
+    fatherOccp : req.body.fatherOccp,
+    motherOccp : req.body.motherOccp,
+    dob : req.body.dob,
+    gender : req.body.gender,
+    bloodGrp : req.body.bloodGrp,
+    category : req.body.category,
+    nationality : req.body.nationality,
+    address : req.body.address,
+    city : req.body.city,
+    state : req.body.state,
+    pincode : req.body.pincode,
+    pmobile : req.body.pmobile,
+    mobile : req.body.mobile,
+    email : req.body.email,
+    school : req.body.school,
+    schoolAddress : req.body.schoolAddress,
+    perClass : req.body.perClass,
+    perPCM : req.body.perPCM,
+    perPCB : req.body.perPCB,
+    gradeScience : req.body.gradeScience,
+    gradeMaths : req.body.gradeMaths,
+    examBoard : req.body.examBoard,
+    image : `${req.protocol}://${req.get("host")}/document/${file()}`
+  });
+
 
   // send sms to the no.
   fast2sms.sendMessage({
