@@ -34,6 +34,7 @@ const batchMstModel = require('../models/batchMst.model');
 const neetUsersModel = require('../models/neetUsers.model');
 const userTopicsModel = require('../models/userTopic.model');
 const topicQuestionModel = require('../models/topicQuestion.model');
+const userNewRegisterModel = require('../models/usersNewRegister.model');
 
 
 // Document Storage
@@ -253,7 +254,7 @@ router.post('/neet-student-register', imageUpload.single('admitcard'), async (re
 
 
 /* REGISTER new demo user */
-/* router.post('/demo-register', async (req, res) => {
+/* router.post('/new-register', async (req, res) => {
   // check promo code
   const premId = await remIdModel.findOne({remTittle : 'RemTable'});
   if (premId.remPromo != req.body.promo) return res.status(400).send("Promo code mismatch"); 
@@ -400,44 +401,13 @@ router.post('/neet-student-register', imageUpload.single('admitcard'), async (re
   });
 
   // send sms to the no.
-  fast2sms.sendMessage({
-    authorization : process.env.FAST_2_SMS,
-    message : `Gravity LMS Login Details:-\nUserId : ${user.userId}\nPassword : ${user.pass}\n`,
-    numbers : [user.mobile]
-  });
+  // fast2sms.sendMessage({
+  //   authorization : process.env.FAST_2_SMS,
+  //   message : `Gravity LMS Login Details:-\nUserId : ${user.userId}\nPassword : ${user.pass}\n`,
+  //   numbers : [user.mobile]
+  // });
 
-  /* // create reusable transporter object using the default SMTP transport
-  let transporter = nodemailer.createTransport({
-    // host: "smtp.ethereal.email",
-    // port: 587,
-    // secure: false, // true for 465, false for other ports
-    service: 'gmail',
-    auth: {
-      user: 'gravityitwork@gmail.com', // user
-      pass: 'gravityitwork@123', // password
-    }
-  });
-  
-  let content = `
-  <h2>Registration Successful</h2>
-  <p>Your User Id and Password for Gravity LMS Account</p>
-  <h4>User Id : ${user.email}</h4>
-  <h4>Password : ${user.pass}</h4>
-  <br>
-  <br>
-  <p>Login Link : <a href="https://gravitydigital.com/">www.gravitydigital.com</a></p>
-  <p>For any queries, Call : <a href="tel:+918429981577">+91 84299 81577</a>
-  `;
-  
-  // send mail with defined transport object
-  await transporter.sendMail({
-    from: '"Gravity LMS" <gravityitwork@gmail.com>', // sender address
-    to: user.email, // list of receivers
-    subject: "Gravity LMS Registration", // Subject line
-    html: content, // html body
-  }); */
-
-  /* user.save(function(err, userObj){
+  user.save(function(err, userObj){
     if(err){
       res.send({status: 500, message: 'Unable to ADD user'});
     }
@@ -447,6 +417,36 @@ router.post('/neet-student-register', imageUpload.single('admitcard'), async (re
 
   });
 }); */
+router.post('/new-register', async (req, res) => { 
+
+  // const user = new userRegisterModel(req.body);
+  const user = new userNewRegisterModel({
+    name : req.body.name,
+    father : req.body.father,
+    mobile : req.body.mobile,
+    email : req.body.email,
+    stream : req.body.stream,
+    promo : req.body.promo
+  });
+
+  // send sms to the no.
+  fast2sms.sendMessage({
+    authorization : process.env.FAST_2_SMS,
+    message : `Gravity LMS Registration completed successfully`,
+    numbers : [user.mobile]
+  });
+
+  user.save(function(err, userObj){
+    if(err){
+      res.send({status: 500, message: 'Unable to ADD user'});
+    }
+    else{
+      res.send({status: 200, message: 'You registered successfully', result: userObj});
+    }
+  });
+
+});
+
 
 
 /* REGISTER new demo user */
